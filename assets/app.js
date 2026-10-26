@@ -106,7 +106,6 @@ const fmt = {
   int: (v) => (v === null || v === undefined ? "–" : Number(v).toLocaleString("en-US")),
   pct: (v) => (v === null || v === undefined ? "–" : Number(v).toFixed(1)),
   bits: (v) => (v === null || v === undefined ? "–" : Number(v).toFixed(0)),
-  mb: (v) => (v === null || v === undefined ? "–" : `${(v / 1e6).toFixed(2)} Mb`),
   loc: (chr, start, end) => `${chr}:${fmt.int(start)}–${fmt.int(end)}`,
 };
 
@@ -236,6 +235,12 @@ function renderGene() {
 function renderControls() {
   document.querySelectorAll("[data-top]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.top) === state.top)));
   document.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === state.view)));
+  const total = state.manifest.target_genomes.length;
+  const selected = state.shown.size;
+  const count = $("#genome-selection-count");
+  if (count) count.textContent = `${selected} of ${total} selected`;
+  $("[data-genomes=all]").disabled = selected === total;
+  $("[data-genomes=none]").disabled = selected === 0;
   const chips = $("#genome-chips");
   chips.replaceChildren(...state.manifest.target_genomes.map((g) => el("button", {
     type: "button", class: "chip", "aria-pressed": String(state.shown.has(g)),
@@ -353,7 +358,7 @@ function overviewRow(genome) {
       el("span", { class: "caret", "aria-hidden": "true" }, expanded ? "▾" : "▸"), " ", genome,
       genome === state.genome ? el("span", { class: "pill" }, "own") : null),
     best
-      ? el("td", {}, geneLink(best[h.target_id], genome), el("div", { class: "small muted" }, `${best[h.chromosome]}:${fmt.mb(best[h.start])} · ${fmt.pct(best[h.identity_pct])}% identity · ${fmt.bits(best[h.bitscore])} bits`))
+      ? el("td", {}, geneLink(best[h.target_id], genome), el("div", { class: "small muted" }, `${fmt.loc(best[h.chromosome], best[h.start], best[h.end])} bp · ${fmt.pct(best[h.identity_pct])}% identity · ${fmt.bits(best[h.bitscore])} bits`))
       : el("td", { class: "muted" }, state.manifest.target_statuses[status] || status),
     best ? el("td", { class: "num cov-pair" }, `${fmt.pct(best[h.query_coverage_pct])} / ${fmt.pct(best[h.target_coverage_pct])}`) : el("td", {}, "–"),
     el("td", { class: "num" }, relationText),
@@ -510,7 +515,7 @@ function openCellDetails(genome, sg, cell) {
   const details = [];
   if (cell[c.gene_id] !== null) {
     details.push(
-      row("Gene", el("span", {}, geneLink(cell[c.gene_id], genome), ` (${genome} ${sg}, ${cell[c.chromosome]}:${fmt.mb(cell[c.start])})`)),
+      row("Gene", el("span", {}, geneLink(cell[c.gene_id], genome), ` (${genome} ${sg}, ${fmt.loc(cell[c.chromosome], cell[c.start], cell[c.end])} bp)`)),
       row("Role", cell[c.role] === "ortholog" ? "ortholog (same subgenome as the query)" : cell[c.role] === "self" ? "the query itself" : "predicted homeolog"),
       row("Evidence", cellEvidence(cell)),
       row("What this means", cellEvidenceDescription(cell, genome)),
@@ -565,7 +570,7 @@ function homeologCell(cell, genome, sg, alreadyNamed = null) {
   const check = flags.includes("candidates_conflict") || flags.includes("near_identical_unconfirmed") || flags.includes("second_route_disagrees");
   return el("td", { class: `hcell ${cell[c.role]}` },
     el("div", {}, geneLink(cell[c.gene_id], genome),
-      el("span", { class: "muted small" }, ` ${cell[c.chromosome]}:${fmt.mb(cell[c.start])}`)),
+      el("div", { class: "muted small" }, `${fmt.loc(cell[c.chromosome], cell[c.start], cell[c.end])} bp`)),
     el("div", { class: "hmeta" },
       cell[c.state] === "self" ? null
         : cell[c.identity_pct] === null ? el("span", { class: "muted" }, "no stored hit · ")
@@ -769,7 +774,7 @@ function openDataMethods(homeologNote) {
       "Homeolog assignments are computational predictions. Two routes agree means that a protein-match candidate is supported by a reverse-match check or by mapping through the query's within-annotation homeolog. This is not independent validation. A missing match does not establish biological absence.",
     ].map((note) => el("li", {}, note))),
     el("details", { class: "group-technical data-provenance" },
-      el("summary", {}, "Technical provenance"),
+      el("summary", {}, "Data version details"),
       el("dl", { class: "details" },
         row("Analysis ID", m.run),
         row("Protein-hit data exported", m.created_utc.slice(0, 10)),

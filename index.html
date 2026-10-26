@@ -51,10 +51,17 @@
         <button type="button" id="download" class="secondary" title="Save what this view shows, for all selected genomes, as a tab-separated file">Download this result (TSV)</button>
       </div>
       <div class="control control-genomes">
-        <span class="control-label">Genomes</span>
-        <div id="genome-chips" class="chips"></div>
-        <button type="button" class="link-button" data-genomes="all">all</button>
-        <button type="button" class="link-button" data-genomes="none">none</button>
+        <div class="genome-selection-header">
+          <div class="genome-selection-title">
+            <span class="control-label" id="genome-selection-label">Annotations</span>
+            <span id="genome-selection-count" class="selection-count" aria-live="polite" aria-atomic="true"></span>
+          </div>
+          <div class="genome-selection-actions" role="group" aria-label="Annotation selection">
+            <button type="button" class="selection-button" data-genomes="all">Select all</button>
+            <button type="button" class="selection-button" data-genomes="none">Clear selection</button>
+          </div>
+        </div>
+        <div id="genome-chips" class="chips" aria-labelledby="genome-selection-label"></div>
       </div>
     </section>
 
