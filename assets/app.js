@@ -143,6 +143,7 @@ function badges({ synteny, orthofinder, sharedEntry, qcov, tcov }) {
 }
 
 function openDialog(...content) {
+  hideEvidenceTooltip();
   $("#dialog-body").replaceChildren(...content.flat().filter(Boolean));
   const dialog = $("#dialog");
   if (!dialog.open) dialog.showModal();
@@ -150,6 +151,27 @@ function openDialog(...content) {
 
 function detailsButton(label, onclick) {
   return el("button", { type: "button", class: "link-button", onclick }, label);
+}
+
+function showEvidenceTooltip(button, text) {
+  let tooltip = $("#evidence-tooltip");
+  if (!tooltip) {
+    tooltip = el("div", { id: "evidence-tooltip", class: "evidence-tooltip", role: "tooltip" });
+    document.body.append(tooltip);
+  }
+  tooltip.textContent = text;
+  tooltip.hidden = false;
+  const box = button.getBoundingClientRect();
+  const left = Math.max(8, Math.min(box.left, innerWidth - tooltip.offsetWidth - 8));
+  const below = box.bottom + 8;
+  const top = below + tooltip.offsetHeight <= innerHeight - 8 ? below : box.top - tooltip.offsetHeight - 8;
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${Math.max(8, top)}px`;
+}
+
+function hideEvidenceTooltip() {
+  const tooltip = $("#evidence-tooltip");
+  if (tooltip) tooltip.hidden = true;
 }
 
 function notAvailable(error) {
@@ -446,8 +468,39 @@ function cellEvidence(cell) {
     return { "synteny+orthofinder": "synteny + OrthoFinder", synteny: "synteny only", orthofinder: "OrthoFinder only",
              sequence: "sequence only (≥ 97% identity)" }[evidence] || evidence;
   }
+  if (stateName === "confirmed" && cell[c.flags].includes("confirmed_by_partner")) return "partner supported";
   return { confirmed: "two routes agree", sequence_only: "sequence only", ambiguous: "sequence only, near-equal candidates",
            via_own_homeolog: "via own homeolog" }[stateName] || stateName;
+}
+
+function cellEvidenceDescription(cell, genome) {
+  const c = col.cell, role = cell[c.role], stateName = cell[c.state], flags = cell[c.flags];
+  if (stateName === "self") return "This is the query gene itself.";
+  if (role === "ortholog") {
+    return {
+      "synteny+orthofinder": "This pair has both a direct conserved gene-order relationship and an OrthoFinder pairwise link. Together they provide computational support, not experimental confirmation.",
+      synteny: "This pair has a direct conserved gene-order relationship. No OrthoFinder pairwise link was recorded for this pair.",
+      orthofinder: "OrthoFinder links these genes. No direct syntenic relationship was recorded for this pair.",
+      sequence: "A close protein match was selected without a direct syntenic or OrthoFinder link for this pair.",
+    }[cell[c.evidence]] || "Open the details to inspect the evidence for this candidate.";
+  }
+  if (stateName === "confirmed") {
+    let explanation;
+    if (flags.includes("confirmed_by_partner")) {
+      explanation = "This protein-match candidate is a syntenic or OrthoFinder partner of the query's within-annotation homeolog. Its preferred mapped gene could not be used.";
+    } else if (genome === state.genome) {
+      explanation = "Route 1 selects this protein-match candidate for the other subgenome. Route 2 checks that this candidate's best qualifying reverse match is the query gene.";
+    } else {
+      explanation = "Route 1 matches the query protein directly to this gene. Route 2 maps the query's within-annotation homeolog to the same gene in this annotation.";
+    }
+    if (flags.includes("own_homeolog_unconfirmed")) explanation += " The intermediate homeolog is itself unconfirmed.";
+    return explanation + " These checks share input evidence; agreement is not independent or experimental validation.";
+  }
+  return {
+    sequence_only: "This candidate meets the protein identity and coverage criteria on the expected subgenome chromosome. No agreeing second route was available.",
+    ambiguous: "Several protein matches have similar alignment scores. The displayed gene is one candidate; inspect the alternatives before choosing.",
+    via_own_homeolog: "The direct protein match is weak or missing. This candidate is inferred by mapping the query's within-annotation homeolog to this annotation.",
+  }[stateName] || "Open the details to inspect how this candidate was selected.";
 }
 
 function openCellDetails(genome, sg, cell) {
@@ -460,6 +513,7 @@ function openCellDetails(genome, sg, cell) {
       row("Gene", el("span", {}, geneLink(cell[c.gene_id], genome), ` (${genome} ${sg}, ${cell[c.chromosome]}:${fmt.mb(cell[c.start])})`)),
       row("Role", cell[c.role] === "ortholog" ? "ortholog (same subgenome as the query)" : cell[c.role] === "self" ? "the query itself" : "predicted homeolog"),
       row("Evidence", cellEvidence(cell)),
+      row("What this means", cellEvidenceDescription(cell, genome)),
       cell[c.identity_pct] === null ? row("Protein match", "no stored protein hit to the query")
         : row("Protein match", `${fmt.pct(cell[c.identity_pct])}% identity, coverage ${fmt.pct(cell[c.query_coverage_pct])}% of the query / `
           + `${fmt.pct(cell[c.target_coverage_pct])}% of this gene, ${fmt.bits(cell[c.bitscore])} bits, rank ${cell[c.hit_rank]} among all stored candidates in ${genome}`),
@@ -516,7 +570,16 @@ function homeologCell(cell, genome, sg, alreadyNamed = null) {
       cell[c.state] === "self" ? null
         : cell[c.identity_pct] === null ? el("span", { class: "muted" }, "no stored hit · ")
         : el("span", {}, `${fmt.pct(cell[c.identity_pct])}% · cov ${fmt.pct(cell[c.query_coverage_pct])}/${fmt.pct(cell[c.target_coverage_pct])} · `),
-      el("span", { class: `badge state-${cell[c.state]}` }, cellEvidence(cell)),
+      el("button", {
+        type: "button", class: `badge evidence-help state-${cell[c.state]}`,
+        "aria-label": `${cellEvidence(cell)}. ${cellEvidenceDescription(cell, genome)}`,
+        onmouseenter: (event) => showEvidenceTooltip(event.currentTarget, cellEvidenceDescription(cell, genome)),
+        onmouseleave: hideEvidenceTooltip,
+        onfocus: (event) => showEvidenceTooltip(event.currentTarget, cellEvidenceDescription(cell, genome)),
+        onblur: hideEvidenceTooltip,
+        onkeydown: (event) => { if (event.key === "Escape") hideEvidenceTooltip(); },
+        onclick: open,
+      }, cellEvidence(cell)),
       check ? el("span", { class: "badge partial", title: cell[c.reason] || "Check this pick" }, " check") : null,
       cell[c.n_alternatives] ? el("button", { type: "button", class: "link-button", onclick: open },
         `+${cell[c.n_alternatives]} candidate${cell[c.n_alternatives] > 1 ? "s" : ""}`) : null,
@@ -574,6 +637,7 @@ async function renderHomeologs(container) {
 // ---- Results, views -------------------------------------------------------------------------------
 
 function renderResults() {
+  hideEvidenceTooltip();
   const results = $("#results");
   if (!state.record) { results.hidden = true; $("#legend").hidden = true; return; }
   results.hidden = false;
@@ -702,7 +766,7 @@ function openDataMethods(homeologNote) {
       "Related genes includes all stored syntenic and OrthoFinder partners, including those outside the displayed top hits.",
       "Direct synteny was evaluated between same-numbered chromosomes. Shared pan-gene membership does not imply direct synteny between every pair of members.",
       "Consider sequence identity and coverage together. A short, high-identity match requires review of the gene models.",
-      "Homeolog assignments are computational predictions. Multiple candidates may be supported. A missing match does not establish biological absence.",
+      "Homeolog assignments are computational predictions. Two routes agree means that a protein-match candidate is supported by a reverse-match check or by mapping through the query's within-annotation homeolog. This is not independent validation. A missing match does not establish biological absence.",
     ].map((note) => el("li", {}, note))),
     el("details", { class: "group-technical data-provenance" },
       el("summary", {}, "Technical provenance"),
@@ -731,6 +795,7 @@ function renderFooter(homeologNote) {
 
 // Hide the previous gene, so a failed lookup is never read as showing the result of the new one.
 function clearResult() {
+  hideEvidenceTooltip();
   state.record = null;
   state.homeologs = null;
   state.expanded = new Set();
@@ -847,6 +912,8 @@ async function start() {
   $("#download").addEventListener("click", downloadCurrent);
   $("#dialog").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
   window.addEventListener("hashchange", fromHash);
+  window.addEventListener("scroll", hideEvidenceTooltip, true);
+  window.addEventListener("resize", hideEvidenceTooltip);
 
   for (const field of document.querySelectorAll("#search input, #search select, #search button")) field.disabled = false;
   $("#gene-input").placeholder = "Gene, transcript or protein ID, e.g. CsPrytzh.01G000100";

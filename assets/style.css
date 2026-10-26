@@ -220,6 +220,15 @@ td.evidence { white-space: nowrap; }
 .method-notes { margin: 0 0 16px; padding-left: 20px; }
 .method-notes li + li { margin-top: 8px; }
 .data-provenance code { overflow-wrap: anywhere; }
+.evidence-help { border: 0; font-family: inherit; cursor: help; }
+.evidence-help:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.evidence-tooltip {
+  position: fixed; z-index: 1000; pointer-events: none;
+  width: max-content; max-width: min(340px, calc(100vw - 16px));
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); color: var(--text); font-size: 13px; line-height: 1.5;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18); white-space: normal;
+}
 
 @media (max-width: 640px) {
   h1 { font-size: 21px; }
