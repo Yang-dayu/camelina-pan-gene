@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Camelina Pan-gene Lookup</title>
+  <meta name="description" content="Look up a Camelina sativa gene ID across 15 annotations: protein hits, direct synteny, OrthoFinder relations, pan-gene entries and predicted homeologs.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1>Camelina sativa pan-gene lookup</h1>
+      <p class="subtitle">Find a gene's counterparts in 15 annotations, with the sequence, synteny and orthology evidence behind each one.</p>
+      <form id="search" class="search" autocomplete="off">
+        <label class="visually-hidden" for="gene-input">Gene ID</label>
+        <input id="gene-input" name="gene" type="search" placeholder="Loading data description…" required disabled>
+        <label class="visually-hidden" for="genome-select">Genome</label>
+        <select id="genome-select" name="genome" title="Only needed when an ID exists in several genomes" disabled>
+          <option value="">any genome</option>
+        </select>
+        <button type="submit" disabled>Look up</button>
+      </form>
+      <p class="examples">Examples: <span id="examples"></span></p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="message" class="message" hidden></div>
+
+    <section id="gene" class="gene-card" hidden></section>
+
+    <section id="controls" class="controls" hidden>
+      <div class="control">
+        <span class="control-label">View</span>
+        <div class="segmented" role="tablist" aria-label="View">
+          <button type="button" data-view="overview" title="One row per annotation: best sequence hit, coverage, direct relations">Overview</button>
+          <button type="button" data-view="hits" title="Ranked protein hits in each genome">Hits</button>
+          <button type="button" data-view="related" title="Every syntenic or OrthoFinder partner, whatever its hit rank">Related genes</button>
+          <button type="button" data-view="homeologs" title="Predicted subgenome copies (SG1, SG2, SG3) in every genome">Homeologs</button>
+        </div>
+      </div>
+      <div class="control">
+        <span class="control-label">Show</span>
+        <div class="segmented" role="group" aria-label="Number of hits">
+          <button type="button" data-top="5">Top 5</button>
+          <button type="button" data-top="10">Top 10</button>
+        </div>
+      </div>
+      <div class="control">
+        <button type="button" id="download" class="secondary" title="Save what this view shows, for all selected genomes, as a tab-separated file">Download this result (TSV)</button>
+      </div>
+      <div class="control control-genomes">
+        <span class="control-label">Genomes</span>
+        <div id="genome-chips" class="chips"></div>
+        <button type="button" class="link-button" data-genomes="all">all</button>
+        <button type="button" class="link-button" data-genomes="none">none</button>
+      </div>
+    </section>
+
+    <section id="results" class="results" hidden></section>
+
+    <section class="legend" id="legend" hidden>
+      <h2>Reading the results</h2>
+      <dl>
+        <dt>Best sequence hit</dt>
+        <dd>The highest-scoring protein hit in that genome. It is the strongest sequence match, not necessarily the corresponding gene: a partial or a cross-chromosome match can score higher than the syntenic copy. Open a row to see all hits and the related genes.</dd>
+        <dt><span class="badge syn">synteny</span> <span class="badge anchor">anchor</span></dt>
+        <dd>Direct syntenic pair from GENESPACE (same-numbered chromosomes only); <em>anchor</em> means the pair anchors its block.</dd>
+        <dt><span class="badge of">OrthoFinder</span></dt>
+        <dd>The two genes sit on opposite sides of an OrthoFinder pairwise orthologue row.</dd>
+        <dt><span class="badge pg">same entry</span></dt>
+        <dd>Both genes are in the same pan-gene entry of the query genome's frame. Shared membership is not direct synteny.</dd>
+        <dt><span class="badge partial">partial</span></dt>
+        <dd>One of the two coverages is below 50%: a local match. With high identity this calls for checking the annotation structure; it is not by itself evidence of a split gene.</dd>
+        <dt>Rank</dt>
+        <dd>Order by bit score among every candidate stored for that genome (the self hit is listed separately). Each search reports at most 25 targets, so no hit does not prove absence.</dd>
+        <dt>Homeologs</dt>
+        <dd>Camelina sativa is allohexaploid: most genes have three copies, one per subgenome (SG1, SG2, SG3; Chaudhary et al. 2020).
+          The column of the query's own subgenome shows its ortholog in each genome (same chromosome number);
+          the other two columns show predicted homeologs — the best protein match on that subgenome's chromosome of the
+          query's homeolog group. Each cell states its evidence (synteny + OrthoFinder, two routes agree, sequence only, via own homeolog)
+          and how many near-equal candidates exist. <span class="badge partial">check</span> marks a pick that another candidate beats on a
+          different criterion (for example a near-identical fragment next to the full-length pick), or a near-identical homeolog that
+          nothing confirms; open its details to see why. <em>Not found under current rules</em> can mean the copy sits on an unplaced sequence,
+          has no protein model, falls below the thresholds, or is absent; the cell's details say which.</dd>
+      </dl>
+    </section>
+
+    <section class="downloads" id="downloads" hidden>
+      <h2>Downloads</h2>
+      <ul id="download-list"></ul>
+    </section>
+  </main>
+
+  <dialog id="dialog" class="details-dialog">
+    <form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form>
+    <div id="dialog-body"></div>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="wrap" id="footer">Loading data description…</div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

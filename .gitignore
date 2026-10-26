@@ -1,0 +1,11 @@
+# Local preview data and server; the public page reads pinned Hugging Face files.
+sample_data/
+serve.ps1
+
+# Local packages, editor backups and temporary files.
+*.zip
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
