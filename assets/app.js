@@ -688,6 +688,45 @@ function renderDownloads() {
   $("#downloads").hidden = false;
 }
 
+// Keep the footer concise; method limitations and provenance are available on request.
+function openDataMethods(homeologNote) {
+  const m = state.manifest;
+  const hm = state.homeologManifest;
+  const row = (label, value) => el("div", { class: "detail-row" },
+    el("dt", {}, label), el("dd", {}, value));
+  openDialog(
+    el("h2", {}, "Data and methods"),
+    el("ul", { class: "method-notes" }, [
+      "Protein comparisons use one representative protein sequence per gene.",
+      `Protein hits are ranked by bit score. Each search reports up to ${m.search_max_hits} targets; supplementary searches may add further candidates.`,
+      "Related genes includes all stored syntenic and OrthoFinder partners, including those outside the displayed top hits.",
+      "Direct synteny was evaluated between same-numbered chromosomes. Shared pan-gene membership does not imply direct synteny between every pair of members.",
+      "Consider sequence identity and coverage together. A short, high-identity match requires review of the gene models.",
+      "Homeolog assignments are computational predictions. Multiple candidates may be supported. A missing match does not establish biological absence.",
+    ].map((note) => el("li", {}, note))),
+    el("details", { class: "group-technical data-provenance" },
+      el("summary", {}, "Technical provenance"),
+      el("dl", { class: "details" },
+        row("Analysis ID", m.run),
+        row("Protein-hit data exported", m.created_utc.slice(0, 10)),
+        row("Homeolog data exported", hm ? hm.created_utc.slice(0, 10) : homeologNote),
+        row("Source database SHA-256", el("code", {}, m.source_database_sha256)),
+        row("Evidence identifiers", "Orthogroups are identified by the analysis ID and group name. Pan-gene groups also require the reference annotation and group number."))),
+  );
+}
+
+function renderFooter(homeologNote) {
+  const datasetUrl = CONFIG.browseBase || CONFIG.downloadBase;
+  $("#footer").replaceChildren(...[
+    el("p", {}, `Data from ${state.manifest.target_genomes.length} Camelina sativa annotations.`),
+    el("div", { class: "footer-links" },
+      datasetUrl ? el("a", { href: datasetUrl }, "View dataset") : null,
+      detailsButton("Data and methods", () => openDataMethods(homeologNote))),
+    state.homeologManifest ? null
+      : el("p", { class: "muted" }, "Homeolog predictions are currently unavailable."),
+  ].filter(Boolean));
+}
+
 // ---- Lookup flow -----------------------------------------------------------------------------
 
 // Hide the previous gene, so a failed lookup is never read as showing the result of the new one.
@@ -788,12 +827,7 @@ async function start() {
   $("#genome-select").append(...m.target_genomes.map((g) => el("option", { value: g }, g)));
   $("#examples").replaceChildren(...CONFIG.examples.map(([id, g]) =>
     el("a", { href: `#q=${encodeURIComponent(id)}&g=${encodeURIComponent(g)}`, class: "example" }, `${g}: ${id}`)));
-  $("#footer").replaceChildren(
-    el("p", {}, `Data: run ${m.run}, ${m.target_genomes.length} annotations, hits built ${m.created_utc.slice(0, 10)}; ${homeologNote}; `
-      + `source database SHA-256 ${m.source_database_sha256.slice(0, 12)}…`),
-    el("p", { class: "muted" }, m.notes.join(" ")),
-    el("p", { class: "muted" }, "Evidence IDs are tied to this run: cite orthogroups as run + orthogroup name, "
-      + "pan-gene entries as run + frame + pgID."));
+  renderFooter(homeologNote);
   renderDownloads();
 
   $("#search").addEventListener("submit", (event) => {

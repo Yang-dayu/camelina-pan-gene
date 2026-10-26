@@ -215,6 +215,11 @@ td.evidence { white-space: nowrap; }
 .detail-row ul { margin: 0; padding-left: 18px; }
 .site-footer { border-top: 1px solid var(--line); padding: 16px 0 28px; font-size: 13px; }
 .site-footer p { margin: 4px 0; }
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 6px; }
+.footer-links .link-button { padding: 0; }
+.method-notes { margin: 0 0 16px; padding-left: 20px; }
+.method-notes li + li { margin-top: 8px; }
+.data-provenance code { overflow-wrap: anywhere; }
 
 @media (max-width: 640px) {
   h1 { font-size: 21px; }
