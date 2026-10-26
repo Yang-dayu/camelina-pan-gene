@@ -19,7 +19,7 @@ The site reads public data files from the single dataset revision pinned in conf
 
 1. Put these files at the root of a GitHub repository and commit them to main.
 2. In Settings → Pages, select Deploy from a branch, main and /(root), then save.
-3. Open the published URL shown by GitHub and test a query.
+3. Open the published URL shown by GitHub and test a query. (For example: https://yang-dayu.github.io/camelina-pan-gene)
 
 No build step is required. The data stay on Hugging Face.
 [GitHub Pages instructions](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
