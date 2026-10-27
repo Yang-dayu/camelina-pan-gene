@@ -4,6 +4,9 @@ Look up a gene, transcript or protein ID across 15 Camelina annotations. Compare
 direct synteny, OrthoFinder relations, pan-gene memberships and predicted subgenome copies.
 Query results can be downloaded as TSV.
 
+Source transcript and protein IDs, including nonrepresentative isoforms, resolve to their parent genes.
+All comparisons use one representative protein per gene.
+
 Data: [Hugging Face dataset](https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id).
 The site reads public data files from the single dataset revision pinned in config.js.
 

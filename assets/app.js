@@ -202,8 +202,13 @@ function renderGene() {
   const card = $("#gene");
   const status = { unplaced_protein: "Not on a reference chromosome",
                    no_usable_protein: "No protein available for comparison" }[record.st];
+  const proteinNote = record.st === "no_usable_protein"
+    ? "This gene has no usable representative protein for comparison."
+    : "Results use this gene's representative protein.";
   const note = match === "exact_gene_id" ? null
-    : el("p", { class: "note" }, `“${typed}” is ${match === "merged_id_component" ? "part of the merged ID" : "an alias of"} ${record.id}.`);
+    : el("p", { class: "note" }, match === "merged_id_component"
+      ? `“${typed}” is part of the merged gene ID ${record.id}. ${proteinNote}`
+      : `“${typed}” maps to gene ${record.id}. ${proteinNote}`);
   // This is a display order, not a confidence ranking. Keep the stored memberships unchanged.
   const membershipOrder = { PASS: 0, NSOrtho: 1, array: 2, badOG: 3 };
   const memberships = [...record.pg].sort((a, b) =>
@@ -766,7 +771,7 @@ function openDataMethods(homeologNote) {
   openDialog(
     el("h2", {}, "Data and methods"),
     el("ul", { class: "method-notes" }, [
-      "Protein comparisons use one representative protein sequence per gene.",
+      "Transcript and protein identifiers present in the indexed source annotations resolve to their parent genes. Protein comparisons use one representative protein sequence per gene.",
       `Protein hits are ranked by bit score. Each search reports up to ${m.search_max_hits} targets; supplementary searches may add further candidates.`,
       "Related genes includes all stored syntenic and OrthoFinder partners, including those outside the displayed top hits.",
       "Direct synteny was evaluated between same-numbered chromosomes. Shared pan-gene membership does not imply direct synteny between every pair of members.",
@@ -778,6 +783,7 @@ function openDataMethods(homeologNote) {
       el("dl", { class: "details" },
         row("Analysis ID", m.run),
         row("Protein-hit data exported", m.created_utc.slice(0, 10)),
+        m.id_index_updated_utc ? row("ID index updated", m.id_index_updated_utc.slice(0, 10)) : null,
         row("Homeolog data exported", hm ? hm.created_utc.slice(0, 10) : homeologNote),
         row("Source database SHA-256", el("code", {}, m.source_database_sha256)),
         row("Evidence identifiers", "Orthogroups are identified by the analysis ID and group name. Pan-gene groups also require the reference annotation and group number."))),
@@ -820,12 +826,12 @@ async function lookup(id, genome) {
     const matches = await resolve(id, genome);
     if (seq !== state.lookupSeq) return;
     if (!matches.length) {
-      message(genome ? `No gene “${id}” in ${genome}.` : `No gene “${id}”. IDs are case-sensitive.`, "error");
+      message(genome ? `ID “${id}” was not found in ${genome}. IDs are case-sensitive.` : `ID “${id}” was not found. IDs are case-sensitive.`, "error");
       return;
     }
     if (matches.length > 1) {
-      message([`“${id}” exists in several genomes; choose one: `,
-        ...matches.map(([g, geneId]) => el("a", { href: `#q=${encodeURIComponent(id)}&g=${encodeURIComponent(g)}`, class: "choice" }, `${geneId} (${g})`))]);
+      message([`“${id}” matches multiple genes; choose one: `,
+        ...matches.map(([g, geneId]) => el("a", { href: `#q=${encodeURIComponent(geneId)}&g=${encodeURIComponent(g)}`, class: "choice" }, `${geneId} (${g})`))]);
       return;
     }
     const [g, , key, match] = matches[0];
