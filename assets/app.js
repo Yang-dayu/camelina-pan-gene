@@ -655,7 +655,7 @@ function proteinAlignmentButton(homeologs, sg, chromosomes) {
   if (!example || !CONFIG.downloadBase) return null;
   return el("div", { class: "protein-alignment-action" }, el("button", {
     type: "button", class: "secondary", disabled: shownGenomes().length < 2,
-    title: "Sample: align this column's representative proteins in your browser, using the selected annotations",
+    title: "Sample: align this column's representative proteins and view matching CDS, using the selected annotations",
     onclick: () => {
       const hm = state.homeologManifest, c = col.cell;
       const sgIndex = hm.subgenomes.indexOf(sg);
@@ -669,7 +669,7 @@ function proteinAlignmentButton(homeologs, sg, chromosomes) {
         manifest: state.manifest, homeologs, queryGenome: state.genome, downloadBase: CONFIG.downloadBase,
       });
     },
-  }, "Align proteins"), el("span", { class: "muted small" }, " sample"));
+  }, "Align sequences"), el("span", { class: "muted small" }, " sample"));
 }
 
 // ---- Results, views -------------------------------------------------------------------------------

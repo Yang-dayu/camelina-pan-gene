@@ -1,9 +1,10 @@
-// One on-demand protein alignment example. Sequence data stay on Hugging Face;
-// Kalign runs in a disposable worker on the visitor's device.
+// One on-demand representative-isoform alignment example. Proteins are aligned
+// by Kalign in a browser worker; matching CDS codons follow that same alignment.
 "use strict";
 
 window.ProteinAlignmentView = (() => {
   let active = null;
+  let alignmentResizeObserver = null;
 
   function element(tag, attributes = {}, ...children) {
     const node = document.createElement(tag);
@@ -26,15 +27,9 @@ window.ProteinAlignmentView = (() => {
     return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  // Reject a stale example before starting an alignment, even if IDs look familiar.
-  async function fetchSequences(options, signal) {
-    const { example, manifest, homeologs, members } = options;
-    const response = await fetch(new URL(example.path, options.downloadBase), { signal });
-    require(response.ok, `Sequence download returned HTTP ${response.status}.`);
-    const bytes = await response.arrayBuffer();
-    require(await sha256(bytes) === example.sha256, "The sequence file checksum does not match this example.");
-    const data = JSON.parse(new TextDecoder().decode(bytes));
-    require(data.schema === 1 && data.molecule === "protein", "Unsupported sequence file format.");
+  function checkPacketContext(data, options, molecule) {
+    const { example, manifest, homeologs } = options;
+    require(data.schema === 1 && data.molecule === molecule, "Unsupported sequence file format.");
     require(data.run === manifest.run && data.source_database_sha256 === manifest.source_database_sha256,
       "The sequences and lookup data belong to different versions.");
     require(data.query.id === homeologs.id && data.query.genome === options.queryGenome &&
@@ -45,6 +40,21 @@ window.ProteinAlignmentView = (() => {
       "The sequence example belongs to a different subgenome column.");
     require(data.sequences.length === data.sequence_count && data.sequence_count === manifest.target_genomes.length,
       "The example has an incomplete annotation list.");
+  }
+
+  async function fetchPacket(descriptor, base, signal) {
+    const response = await fetch(new URL(descriptor.path, base), { signal });
+    require(response.ok, `Sequence download returned HTTP ${response.status}.`);
+    const bytes = await response.arrayBuffer();
+    require(await sha256(bytes) === descriptor.sha256, "The sequence file checksum does not match this example.");
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  // Reject a stale example before starting an alignment, even if IDs look familiar.
+  async function fetchSequences(options, signal) {
+    const { example, manifest, members } = options;
+    const data = await fetchPacket(example, options.downloadBase, signal);
+    checkPacketContext(data, options, "protein");
 
     const sequences = new Map();
     for (const row of data.sequences) {
@@ -60,6 +70,32 @@ window.ProteinAlignmentView = (() => {
       require(row && row.gene_id === member.gene_id && row.chromosome === member.chromosome &&
         row.start === member.start && row.end === member.end, `The selected candidate changed in ${member.genome}.`);
       return { ...row, name: `s${String(index + 1).padStart(4, "0")}` };
+    });
+  }
+
+  async function fetchCds(options, proteins, signal) {
+    const data = await fetchPacket(options.example.cds, options.downloadBase, signal);
+    checkPacketContext(data, options, "CDS");
+    require(data.genetic_code?.id === 1, "The CDS requires an unsupported genetic code.");
+    require(data.source_protein_file_sha256 === options.example.sha256,
+      "The CDS export belongs to a different representative-protein set.");
+    const byGenome = new Map();
+    for (const row of data.sequences) {
+      require(!byGenome.has(row.genome) && options.manifest.target_genomes.includes(row.genome),
+        "The CDS export has a repeated or unknown annotation.");
+      require(row.sequence.length === row.length && /^[ACGTRYSWKMBDHVN]+$/i.test(row.sequence),
+        `Invalid CDS sequence: ${row.genome}.`);
+      require(await sha256(new TextEncoder().encode(row.sequence)) === row.sha256 &&
+        await sha256(new TextEncoder().encode(row.alignment_cds)) === row.alignment_cds_sha256,
+        `CDS checksum mismatch: ${row.genome}.`);
+      byGenome.set(row.genome, row);
+    }
+    return proteins.map((protein) => {
+      const row = byGenome.get(protein.genome);
+      require(row && row.gene_id === protein.gene_id && row.gene_key === protein.gene_key &&
+        row.transcript_id === protein.transcript_id && row.protein_id === protein.protein_id &&
+        row.protein_sha256 === protein.sha256, `The CDS isoform differs from the protein in ${protein.genome}.`);
+      return { ...row, name: protein.name };
     });
   }
 
@@ -82,11 +118,23 @@ window.ProteinAlignmentView = (() => {
     return [fields.join("\t"), ...rows.map((row) => fields.map((key) => row[key]).join("\t"))].join("\n") + "\n";
   }
 
+  function cdsMemberTable(proteins, cdsRows) {
+    const fields = ["genome", "gene_id", "protein_id", "transcript_id", "protein_length_aa",
+      "cds_length_nt", "coding_cds_length_nt", "terminal_stop", "protein_sha256", "cds_sha256"];
+    return [fields.join("\t"), ...proteins.map((protein, index) => {
+      const cds = cdsRows[index];
+      return [protein.genome, protein.gene_id, protein.protein_id, protein.transcript_id,
+        protein.length, cds.length, cds.alignment_cds.length, cds.terminal_stop || "",
+        protein.sha256, cds.sha256].join("\t");
+    })].join("\n") + "\n";
+  }
+
   function downloadButton(label, onclick) {
     return element("button", { type: "button", class: "secondary", onclick }, label);
   }
 
-  function colour(residue) {
+  function colour(residue, isCds) {
+    if (isCds) return "ACGT".includes(residue) ? `base-${residue}` : residue === "-" ? "gap" : "unknown";
     if ("AVLIMFWY".includes(residue)) return "hydrophobic";
     if ("KRH".includes(residue)) return "basic";
     if ("DE".includes(residue)) return "acidic";
@@ -97,45 +145,53 @@ window.ProteinAlignmentView = (() => {
 
   // Conservation uses all displayed rows as its denominator; gaps and X are
   // not counted as residues, so a mostly empty column cannot look conserved.
-  function columnSummary(rows) {
+  function columnSummary(rows, isCds) {
     return Array.from({ length: rows[0].sequence.length }, (_, index) => {
       const counts = new Map();
       for (const row of rows) {
-        const residue = row.sequence[index];
-        if (residue !== "-" && residue !== "X") counts.set(residue, (counts.get(residue) || 0) + 1);
+        const residue = isCds ? row.sequence[index].toUpperCase() : row.sequence[index];
+        const known = (isCds ? "ACGT" : "ACDEFGHIKLMNPQRSTVWY").includes(residue);
+        if (known) counts.set(residue, (counts.get(residue) || 0) + 1);
       }
       const sorted = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
       return { residue: sorted[0]?.[0] || "-", fraction: (sorted[0]?.[1] || 0) / rows.length };
     });
   }
 
-  function renderAlignment(container, rows, result) {
-    const summary = columnSummary(rows);
+  function renderAlignment(container, rows, result, mode = "protein") {
+    alignmentResizeObserver?.disconnect();
+    const isCds = mode === "CDS";
+    const summary = columnSummary(rows, isCds);
     const reference = rows.find((row) => row.genome === "Joelle") || rows[0];
     const differences = element("input", { type: "checkbox", onchange: () => {
       viewport.classList.toggle("msa-highlight-differences", differences.checked);
     } });
     const viewport = element("div", { class: "msa-scroll", tabindex: "0", role: "region",
-      "aria-label": "Protein multiple sequence alignment; scroll horizontally to see all columns" });
+      "aria-label": `${isCds ? "CDS" : "Protein"} multiple sequence alignment; scroll horizontally to see all columns` });
     const ruler = element("div", { class: "msa-track msa-ruler" }, summary.map((_, index) =>
       element("span", { class: "msa-aa" }, index === 0 || (index + 1) % 10 === 0 ? index + 1 : "")));
     const table = element("table", { class: "msa-table" });
     table.append(element("thead", {}, element("tr", {},
       element("th", { class: "msa-label", scope: "col" }, "Annotation / gene"),
-      element("th", { scope: "col", "aria-label": "Aligned amino acids" }, ruler))));
+      element("th", { scope: "col", "aria-label": isCds ? "Aligned coding bases" : "Aligned amino acids" }, ruler))));
     const tbody = element("tbody");
     for (const row of rows) {
       const track = element("div", { class: "msa-track", "aria-label": `${row.genome}: ${row.sequence}` });
       for (const [index, residue] of [...row.sequence].entries()) {
+        const displayResidue = isCds ? residue.toUpperCase() : residue;
+        const referenceResidue = isCds ? reference.sequence[index].toUpperCase() : reference.sequence[index];
         track.append(element("span", {
-          class: `msa-aa msa-${colour(residue)}${residue !== reference.sequence[index] ? " msa-difference" : ""}`,
-          title: `Alignment column ${index + 1}: ${residue === "-" ? "gap" : residue}`,
+          class: `msa-aa msa-${colour(displayResidue, isCds)}${isCds && (index + 1) % 3 === 0 ? " msa-codon-end" : ""}`
+            + (displayResidue !== referenceResidue ? " msa-difference" : ""),
+          title: `Alignment column ${index + 1}: ${displayResidue === "-" ? "gap" : displayResidue}`
+            + (isCds ? `; protein alignment column ${Math.floor(index / 3) + 1}, codon base ${index % 3 + 1}` : ""),
           "aria-hidden": "true",
-        }, residue));
+        }, displayResidue));
       }
       const label = element("th", { class: "msa-label", scope: "row" },
         element("strong", {}, row.genome), element("code", {}, row.gene_id),
-        element("small", {}, `${row.length.toLocaleString("en-US")} aa`));
+        element("small", {}, `${row.length.toLocaleString("en-US")} ${isCds ? "nt" : "aa"}`
+          + (isCds && row.terminal_stop ? " incl. stop" : "")));
       tbody.append(element("tr", { "data-genome": row.genome }, label, element("td", {}, track)));
     }
     const bars = element("div", { class: "msa-track msa-conservation" });
@@ -150,6 +206,7 @@ window.ProteinAlignmentView = (() => {
     const firstReferenceColumn = reference.sequence.search(/[^-]/);
     const rangeLabel = element("span", { class: "muted small", "aria-live": "polite" });
     const updateRange = () => {
+      if (!viewport.isConnected) return;
       const labelWidth = table.querySelector(".msa-label").getBoundingClientRect().width;
       const first = Math.floor(Math.max(0, viewport.scrollLeft - 10) / 11) + 1;
       const visible = Math.max(1, Math.floor((viewport.clientWidth - labelWidth - 20) / 11));
@@ -159,25 +216,35 @@ window.ProteinAlignmentView = (() => {
     const jump = (column) => { viewport.scrollLeft = column ? column * 11 + 10 : 0; updateRange(); };
     const navigation = element("div", { class: "msa-navigation" },
       downloadButton("Start", () => jump(0)),
-      downloadButton(`First ${reference.genome} residue`, () => jump(firstReferenceColumn)),
+      downloadButton(`First ${reference.genome} ${isCds ? "base" : "residue"}`, () => jump(firstReferenceColumn)),
       downloadButton("End", () => { viewport.scrollLeft = viewport.scrollWidth; updateRange(); }), rangeLabel);
     container.replaceChildren(
       element("div", { class: "msa-view-controls" },
         element("label", {}, differences, ` Highlight differences from ${reference.genome}`),
-        element("span", { class: "muted small" }, `${rows.length} proteins · ${result.alignmentLength.toLocaleString("en-US")} alignment columns`)),
+        element("span", { class: "muted small" }, `${rows.length} ${isCds ? "CDS sequences" : "proteins"} · `
+          + `${result.alignmentLength.toLocaleString("en-US")} alignment columns`)),
       navigation, viewport,
-      element("p", { class: "muted small" }, "Scroll horizontally for the full alignment. Numbers refer to alignment columns; “-” is a gap and X is an unknown residue. "
-        + "Conservation is the most frequent known residue divided by all displayed proteins, including rows with gaps."),
+      element("p", { class: "muted small" }, isCds
+        ? "CDS codons follow the protein alignment: each protein gap becomes three base gaps. Numbers are CDS alignment columns, not genomic coordinates. "
+          + "Terminal stop codons are retained in the original CDS download and excluded from this view. Ambiguous bases do not contribute to conservation. "
+          + "Bases are displayed in uppercase; downloads retain source case."
+        : "Scroll horizontally for the full alignment. Numbers refer to alignment columns; “-” is a gap and X is an unknown residue. "
+          + "Conservation is the most frequent known residue divided by all displayed proteins, including rows with gaps."),
       element("div", { class: "msa-colour-key", "aria-label": "Residue colour key" },
-        [["hydrophobic", "Hydrophobic"], ["basic", "Basic"], ["acidic", "Acidic"], ["polar", "Polar"], ["special", "C / G / P"]]
+        (isCds ? [["base-A", "A"], ["base-C", "C"], ["base-G", "G"], ["base-T", "T"], ["unknown", "Ambiguous"]]
+          : [["hydrophobic", "Hydrophobic"], ["basic", "Basic"], ["acidic", "Acidic"], ["polar", "Polar"], ["special", "C / G / P"]])
           .map(([key, label]) => element("span", { class: `msa-${key}` }, label))),
     );
     // Start with the reference's first residue visible while retaining every
     // leading column. Start/End and the scrollbar expose the full alignment.
     requestAnimationFrame(() => { if (viewport.isConnected) jump(firstReferenceColumn); });
+    alignmentResizeObserver = new ResizeObserver(updateRange);
+    alignmentResizeObserver.observe(viewport);
   }
 
   function cancel() {
+    alignmentResizeObserver?.disconnect();
+    alignmentResizeObserver = null;
     if (active) {
       active.controller.abort();
       active.dialog.classList.remove("alignment-dialog");
@@ -191,10 +258,25 @@ window.ProteinAlignmentView = (() => {
     if (dialog?.open) dialog.close();
   }
 
+  function methodDetails(options, result, isCds) {
+    const descriptor = isCds ? options.example.cds : options.example;
+    const method = isCds
+      ? "Each verified CDS codon follows its representative protein's Kalign alignment. No separate nucleotide alignment is calculated. "
+        + "The CDS must translate to that same protein; only a separately declared terminal stop codon is omitted from the aligned view."
+      : `${result.algorithm} ${result.version}: ${result.parameters}. The proteins retain their full original sequences.`;
+    return element("details", { class: "group-technical" },
+      element("summary", {}, "Alignment method and sequence source"),
+      element("p", { class: "muted small" }, method + " Sequences load on demand from the pinned Hugging Face dataset. "
+        + "Adding or removing annotations can change alignment columns. Predicted correspondences and alignment gaps require biological interpretation."),
+      element("p", { class: "muted small" },
+        element("a", { href: new URL(descriptor.path, options.downloadBase).href }, `${isCds ? "CDS" : "Representative proteins"} and export metadata (JSON)`), " · ",
+        element("a", { href: "assets/vendor/kalign-3.3.1/SOURCE.md" }, "Kalign source and license")));
+  }
+
   async function open(options) {
     cancel();
     const { dialog, body, example, members } = options;
-    const session = { controller: new AbortController(), dialog };
+    const session = { controller: new AbortController(), dialog, displayRequest: 0 };
     active = session;
     dialog.classList.add("alignment-dialog");
     dialog.addEventListener("close", () => { if (active === session) cancel(); }, { once: true });
@@ -202,6 +284,61 @@ window.ProteinAlignmentView = (() => {
     const view = element("div", { class: "msa-output" });
     const downloads = element("div", { class: "msa-downloads" });
     const actions = element("div", { class: "msa-actions" });
+    const proteinButton = downloadButton("Protein", () => showMode("protein"));
+    const cdsButton = downloadButton("CDS (bases)", () => showMode("CDS"));
+    proteinButton.disabled = true;
+    cdsButton.disabled = true;
+    proteinButton.setAttribute("aria-pressed", "true");
+    cdsButton.setAttribute("aria-pressed", "false");
+    const modes = element("div", { class: "segmented msa-modes", role: "group", "aria-label": "Sequence type" }, proteinButton, cdsButton);
+    let rows, result, proteinAligned, cdsRows, cdsProjection, cdsTask;
+
+    async function showMode(mode) {
+      const request = ++session.displayRequest;
+      const isCds = mode === "CDS";
+      proteinButton.setAttribute("aria-pressed", String(!isCds));
+      cdsButton.setAttribute("aria-pressed", String(isCds));
+      status.classList.remove("error");
+      delete view.dataset.complete;
+      downloads.replaceChildren();
+      const stem = example.path.split("/").pop().replace(/\.json$/, "");
+      try {
+        if (!isCds) {
+          renderAlignment(view, proteinAligned, result);
+          view.append(methodDetails(options, result, false));
+          downloads.append(
+            downloadButton("Download alignment (FASTA)", () => download(fasta(proteinAligned), `${stem}_kalign_3.3.1.faa`, "text/plain")),
+            downloadButton("Download proteins (FASTA)", () => download(fasta(rows), `${stem}_proteins.faa`, "text/plain")),
+            downloadButton("Download members (TSV)", () => download(memberTable(rows), `${stem}_members.tsv`, "text/tab-separated-values")),
+          );
+          status.textContent = `${rows.length} proteins aligned in your browser with ${result.algorithm} ${result.version}.`;
+        } else {
+          status.textContent = "Loading and validating the matching CDS sequences…";
+          view.replaceChildren(element("p", { class: "muted" }, "CDS codons will follow the protein alignment."));
+          if (!cdsTask) cdsTask = fetchCds(options, rows, session.controller.signal).catch((error) => { cdsTask = null; throw error; });
+          cdsRows = await cdsTask;
+          if (session.controller.signal.aborted || active !== session || request !== session.displayRequest) return;
+          if (!cdsProjection) cdsProjection = window.CodonAlignment.validateAndProject(rows, result.aligned, cdsRows);
+          const alignedByName = new Map(cdsProjection.aligned.map((row) => [row.name, row.sequence]));
+          const alignedCds = cdsRows.map((row) => ({ ...row, sequence: alignedByName.get(row.name) }));
+          renderAlignment(view, alignedCds, cdsProjection, "CDS");
+          view.append(methodDetails(options, result, true));
+          downloads.append(
+            downloadButton("Download CDS alignment (FASTA)", () => download(fasta(alignedCds), `${stem}_protein_guided_cds.fna`, "text/plain")),
+            downloadButton("Download CDS (FASTA)", () => download(fasta(cdsRows), `${stem}_cds.fna`, "text/plain")),
+            downloadButton("Download members (TSV)", () => download(cdsMemberTable(rows, cdsRows), `${stem}_cds_members.tsv`, "text/tab-separated-values")),
+          );
+          status.textContent = `${cdsRows.length} CDS sequences shown in the protein alignment, with codons kept together.`;
+        }
+        view.dataset.molecule = mode;
+        view.dataset.complete = "true";
+      } catch (error) {
+        if (active !== session || session.controller.signal.aborted || request !== session.displayRequest) return;
+        view.replaceChildren();
+        status.textContent = `Could not show ${isCds ? "CDS" : "protein"} alignment: ${error.message}`;
+        status.classList.add("error");
+      }
+    }
     const cancelButton = downloadButton("Cancel alignment", () => {
       session.controller.abort();
       status.textContent = "Alignment cancelled. You can run it again.";
@@ -212,15 +349,15 @@ window.ProteinAlignmentView = (() => {
     retry.hidden = true;
     actions.append(cancelButton, retry);
     body.replaceChildren(
-      element("h2", {}, `Protein alignment · ${example.subgenome} · ${options.chromosomes.join(" / ")}`),
-      element("p", { class: "msa-intro" }, `Sample for ${options.homeologs.id}: one existing representative protein per selected annotation. `
+      element("h2", {}, `Sequence alignment · ${example.subgenome} · ${options.chromosomes.join(" / ")}`),
+      element("p", { class: "msa-intro" }, `Sample for ${options.homeologs.id}: one representative isoform per selected annotation. `
         + `The original query is on ${options.homeologs.sg}; this alignment compares the ${example.subgenome} candidates.`),
-      status, actions, downloads, view,
+      modes, status, actions, downloads, view,
     );
     if (!dialog.open) dialog.showModal();
     try {
       require(members.length >= 2, "Select at least two annotations to make an alignment.");
-      const rows = await fetchSequences(options, session.controller.signal);
+      rows = await fetchSequences(options, session.controller.signal);
       if (session.controller.signal.aborted || active !== session) return;
       const stem = example.path.split("/").pop().replace(/\.json$/, "");
       downloads.append(
@@ -228,27 +365,16 @@ window.ProteinAlignmentView = (() => {
         downloadButton("Download members (TSV)", () => download(memberTable(rows), `${stem}_members.tsv`, "text/tab-separated-values")),
       );
       status.textContent = `Aligning ${rows.length} proteins in your browser…`;
-      const result = await window.ProteinAlignment.run(rows.map(({ name, sequence }) => ({ name, sequence })), {
+      result = await window.ProteinAlignment.run(rows.map(({ name, sequence }) => ({ name, sequence })), {
         signal: session.controller.signal,
         onProgress: (message) => { if (active === session) status.textContent = typeof message === "string" ? message : message.message; },
       });
       if (session.controller.signal.aborted || active !== session) return;
       const aligned = new Map(result.aligned.map((row) => [row.name, row.sequence]));
-      const alignedRows = rows.map((row) => ({ ...row, sequence: aligned.get(row.name) }));
-      renderAlignment(view, alignedRows, result);
-      view.append(element("details", { class: "group-technical" },
-        element("summary", {}, "Alignment method and sequence source"),
-        element("p", { class: "muted small" }, `${result.algorithm} ${result.version}: ${result.parameters}. `
-          + "Unaligned sequences load from the pinned Hugging Face dataset; alignment runs on your device. "
-          + "The proteins retain their full original sequences. Adding or removing annotations can change alignment columns. "
-          + "Predicted correspondences and alignment gaps require biological interpretation."),
-        element("p", { class: "muted small" },
-          element("a", { href: new URL(example.path, options.downloadBase).href }, "Representative proteins and export metadata (JSON)"), " · ",
-          element("a", { href: "assets/vendor/kalign-3.3.1/SOURCE.md" }, "Kalign source and license"))));
-      downloads.prepend(downloadButton("Download alignment (FASTA)", () =>
-        download(fasta(alignedRows), `${stem}_kalign_3.3.1.faa`, "text/plain")));
-      status.textContent = `${rows.length} proteins aligned in your browser with ${result.algorithm} ${result.version}.`;
-      view.dataset.complete = "true";
+      proteinAligned = rows.map((row) => ({ ...row, sequence: aligned.get(row.name) }));
+      proteinButton.disabled = false;
+      cdsButton.disabled = !example.cds;
+      await showMode("protein");
       cancelButton.hidden = true;
       retry.hidden = false;
     } catch (error) {

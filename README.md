@@ -4,12 +4,19 @@ Look up a gene, transcript or protein ID across 15 Camelina annotations. Compare
 direct synteny, OrthoFinder relations, pan-gene memberships and predicted subgenome copies.
 Query results can be downloaded as TSV.
 
-## Protein alignment example
+## Protein and CDS alignment example
 
-Look up `CsJoelle.01G002700` in Joelle, open **Homeologs**, and click **Align proteins**
+Look up `CsJoelle.01G002700` in Joelle, open **Homeologs**, and click **Align sequences**
 under **SG1 · Chr19**. The example compares one existing representative protein per selected
 annotation (15 by default). Select at least two annotations. Other queries and columns do not yet
 have a sequence export.
+
+Switch between **Protein** and **CDS (bases)** in the alignment window. CDS loads only when
+selected, using the exact same representative transcripts. Each CDS is translation-checked and
+its codons follow the protein alignment; each protein gap becomes three base gaps. The CDS view
+does not include introns, UTRs or promoters. Terminal stop codons remain in the original CDS
+download and are omitted from the aligned view. Displayed bases use uppercase; downloads retain
+the source letter case. Original CDS, aligned CDS and CDS member metadata can be downloaded.
 
 Unaligned sequences are fetched from the pinned Hugging Face revision when the alignment is opened.
 Kalign 3.3.1 runs in a browser worker on the visitor's device; the alignment is not computed by
@@ -19,7 +26,7 @@ Alignment positions are columns in the multiple sequence alignment, not genomic 
 Length differences and gaps do not by themselves establish biological insertions, deletions, or gene-model errors.
 
 Source transcript and protein IDs, including nonrepresentative isoforms, resolve to their parent genes.
-All comparisons use one representative protein per gene.
+Protein comparisons use one representative protein per gene.
 
 Data: [Hugging Face dataset](https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id).
 The site reads public data files from the single dataset revision pinned in config.js.
@@ -30,6 +37,7 @@ The site reads public data files from the single dataset revision pinned in conf
 - config.js: dataset addresses, example IDs and download links.
 - assets/app.js: queries and result views.
 - assets/protein-alignment-view.js: on-demand sequence extraction and the alignment view.
+- assets/codon-alignment.js: validates matched CDS and projects codons onto the protein alignment.
 - assets/browser-alignment.js and assets/browser-alignment.worker.js: isolated browser alignment execution.
 - assets/vendor/kalign-3.3.1/: pinned Kalign runtime, GPL license, corresponding source and build provenance.
 - assets/style.css: presentation.
