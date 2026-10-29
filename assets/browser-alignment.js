@@ -4,6 +4,8 @@
 
   const scriptURL = document.currentScript?.src;
   const workerURL = new URL("browser-alignment.worker.js", scriptURL || document.baseURI);
+  // Keep the worker on the page's asset version when a previous run is cached.
+  if (scriptURL) workerURL.search = new URL(scriptURL).search;
   const ALGORITHM = "Kalign";
   const VERSION = "3.3.1";
   const MAX_SEQUENCES = 50;
