@@ -60,34 +60,6 @@
     return codonCache.get(key);
   }
 
-  // User CDS input must already be a spliced coding sequence in frame 1.
-  // Keep source bases/case and declare a terminal stop separately so the same
-  // validation and projection rules apply to imported and published records.
-  function prepareCDS(sequence, label = "Imported CDS") {
-    require(typeof sequence === "string" && DNA.test(sequence),
-      `The CDS contains unsupported DNA characters: ${label}. Use IUPAC DNA, not RNA or genomic sequence with gaps.`);
-    require(sequence.length % 3 === 0,
-      `The CDS length must be divisible by three in reading frame 1: ${label}.`);
-    const last = sequence.slice(-3);
-    const terminalStop = translateCodon(last) === "*" ? last : null;
-    const coding = terminalStop ? sequence.slice(0, -3) : sequence;
-    require(coding.length > 0, `The CDS has no coding region before its terminal stop: ${label}.`);
-    const residues = [];
-    let ambiguousCodons = 0;
-    for (let offset = 0; offset < coding.length; offset += 3) {
-      const codon = coding.slice(offset, offset + 3);
-      const residue = translateCodon(codon);
-      require(residue !== "*", `The CDS has an internal stop at codon ${offset / 3 + 1}: ${label}.`);
-      residues.push(residue);
-      if (!/^[ACGT]{3}$/i.test(codon)) ambiguousCodons++;
-    }
-    return {
-      protein: residues.join(""), sequence, alignment_cds: coding,
-      terminal_stop: terminalStop, length: sequence.length,
-      ambiguous_codons: ambiguousCodons,
-    };
-  }
-
   function validateCDS(protein, cds) {
     const label = `${protein.genome}/${protein.gene_id}`;
     for (const field of IDENTIFIERS) {
@@ -201,5 +173,5 @@
     return { aligned, alignmentLength: columns * 3, proteinAlignmentLength: columns, excludedStops };
   }
 
-  window.CodonAlignment = Object.freeze({ validateAndProject, prepareCDS });
+  window.CodonAlignment = Object.freeze({ validateAndProject });
 })();

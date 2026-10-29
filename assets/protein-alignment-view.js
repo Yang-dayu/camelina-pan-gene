@@ -1,5 +1,5 @@
-// Published representative isoforms and locally supplied FASTA records share
-// one protein alignment. Matching CDS codons follow that same alignment.
+// One on-demand representative-isoform alignment example. Proteins are aligned
+// by Kalign in a browser worker; matching CDS codons follow that same alignment.
 "use strict";
 
 window.ProteinAlignmentView = (() => {
@@ -99,62 +99,6 @@ window.ProteinAlignmentView = (() => {
     });
   }
 
-  const sequenceKey = (row) => JSON.stringify([row.genome, row.gene_id]);
-  const isUser = (row) => row.source === "user";
-
-  // Keep the published packet checks above intact. Local records never enter
-  // those checks or become part of a Hugging Face request.
-  async function selectedSequences(options, signal) {
-    const references = options.members.filter((member) => !isUser(member));
-    const published = references.length
-      ? await fetchSequences({ ...options, members: references }, signal) : [];
-    const byKey = new Map(published.map((row) => [sequenceKey(row), row]));
-    const rows = [];
-    for (const [index, member] of options.members.entries()) {
-      let row;
-      if (isUser(member)) {
-        require(typeof member.sequence === "string" && /^[ACDEFGHIKLMNPQRSTVWYBZX]+$/.test(member.sequence),
-          `The local protein is invalid: ${member.gene_id}.`);
-        row = {
-          source: "user", input_type: member.input_type, genome: "User", gene_id: member.gene_id,
-          protein_id: member.gene_id, transcript_id: member.cds ? member.gene_id : "Not supplied",
-          sequence: member.sequence, length: member.sequence.length,
-          sha256: await sha256(new TextEncoder().encode(member.sequence)),
-          description: member.description, notes: member.notes, local_cds: member.cds,
-        };
-      } else {
-        row = { ...byKey.get(sequenceKey(member)), source: "reference" };
-      }
-      rows.push({ ...row, name: `s${String(index + 1).padStart(4, "0")}` });
-    }
-    require(new Set(rows.map(sequenceKey)).size === rows.length, "The selection repeats a sequence identifier within the same source.");
-    return rows;
-  }
-
-  async function selectedCds(options, proteins, signal) {
-    const references = proteins.filter((row) => !isUser(row));
-    const published = references.length ? await fetchCds(options, references, signal) : [];
-    const byKey = new Map(published.map((row) => [sequenceKey(row), row]));
-    const rows = [];
-    for (const protein of proteins) {
-      if (isUser(protein)) {
-        require(protein.local_cds, `No CDS was supplied for ${protein.gene_id}.`);
-        const cds = protein.local_cds;
-        rows.push({
-          ...cds, source: "user", input_type: "CDS", name: protein.name,
-          genome: protein.genome, gene_id: protein.gene_id,
-          protein_id: protein.protein_id, transcript_id: protein.transcript_id,
-          protein_sha256: protein.sha256,
-          sha256: await sha256(new TextEncoder().encode(cds.sequence)),
-          description: protein.description, notes: protein.notes,
-        });
-      } else {
-        rows.push({ ...byKey.get(sequenceKey(protein)), source: "reference", name: protein.name });
-      }
-    }
-    return rows;
-  }
-
   function download(text, filename, type) {
     const url = URL.createObjectURL(new Blob([text], { type }));
     const link = element("a", { href: url, download: filename });
@@ -164,31 +108,24 @@ window.ProteinAlignmentView = (() => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  const tsvValue = (value) => value === null || value === undefined ? "" : String(value).replace(/[\t\r\n]/g, " ");
-
   function fasta(rows) {
-    return rows.map((row) => `>${row.genome}|${row.gene_id} protein=${tsvValue(row.protein_id)} transcript=${tsvValue(row.transcript_id)}`
-      + (isUser(row) ? ` source=user input_type=${row.input_type}` : "") + "\n"
+    return rows.map((row) => `>${row.genome}|${row.gene_id} protein=${row.protein_id} transcript=${row.transcript_id}\n`
       + row.sequence.match(/.{1,80}/g).join("\n")).join("\n") + "\n";
   }
 
   function memberTable(rows) {
-    const fields = ["genome", "gene_id", "protein_id", "transcript_id", "chromosome", "start", "end", "length", "sha256",
-      "source", "input_type", "description", "notes"];
-    return [fields.join("\t"), ...rows.map((row) => fields.map((key) =>
-      tsvValue(Array.isArray(row[key]) ? row[key].join("; ") : row[key])).join("\t"))].join("\n") + "\n";
+    const fields = ["genome", "gene_id", "protein_id", "transcript_id", "chromosome", "start", "end", "length", "sha256"];
+    return [fields.join("\t"), ...rows.map((row) => fields.map((key) => row[key]).join("\t"))].join("\n") + "\n";
   }
 
   function cdsMemberTable(proteins, cdsRows) {
     const fields = ["genome", "gene_id", "protein_id", "transcript_id", "protein_length_aa",
-      "cds_length_nt", "coding_cds_length_nt", "terminal_stop", "protein_sha256", "cds_sha256",
-      "source", "input_type", "description", "notes"];
+      "cds_length_nt", "coding_cds_length_nt", "terminal_stop", "protein_sha256", "cds_sha256"];
     return [fields.join("\t"), ...proteins.map((protein, index) => {
       const cds = cdsRows[index];
       return [protein.genome, protein.gene_id, protein.protein_id, protein.transcript_id,
         protein.length, cds.length, cds.alignment_cds.length, cds.terminal_stop || "",
-        protein.sha256, cds.sha256, protein.source, protein.input_type, protein.description,
-        protein.notes?.join("; ")].map(tsvValue).join("\t");
+        protein.sha256, cds.sha256].join("\t");
     })].join("\n") + "\n";
   }
 
@@ -324,41 +261,30 @@ window.ProteinAlignmentView = (() => {
   }
 
   function methodDetails(options, result, isCds) {
-    const hasReferences = options.members.some((member) => !isUser(member));
-    const hasUsers = options.members.some(isUser);
-    const descriptor = hasReferences ? (isCds ? options.example.cds : options.example) : null;
+    const descriptor = isCds ? options.example.cds : options.example;
     const method = isCds
-      ? "Each verified CDS codon follows its protein's Kalign alignment. No separate nucleotide alignment is calculated. "
+      ? "Each verified CDS codon follows its representative protein's Kalign alignment. No separate nucleotide alignment is calculated. "
         + "The CDS must translate to that same protein; only a separately declared terminal stop codon is omitted from the aligned view."
-      : `${result.algorithm} ${result.version}: ${result.parameters}. All submitted amino acids are retained; import normalizations are recorded in the member table.`;
+      : `${result.algorithm} ${result.version}: ${result.parameters}. The proteins retain their full original sequences.`;
     return element("details", { class: "group-technical" },
       element("summary", {}, "Alignment method and sequence source"),
-      element("p", { class: "muted small" }, method + " "
-        + (hasReferences ? "Reference sequences load on demand from the pinned Hugging Face dataset. " : "")
-        + (hasUsers ? "User records remain in this browser and are not uploaded. CDS input uses frame 1 and standard nuclear genetic code 1. " : "")
-        + "Adding or removing sequences can change alignment columns. Alignment alone does not establish orthology or annotation correctness."),
+      element("p", { class: "muted small" }, method + " Sequences load on demand from the pinned Hugging Face dataset. "
+        + "Adding or removing annotations can change alignment columns. Predicted correspondences and alignment gaps require biological interpretation."),
       element("p", { class: "muted small" },
-        descriptor ? element("a", { href: new URL(descriptor.path, options.downloadBase).href }, `${isCds ? "CDS" : "Representative proteins"} and export metadata (JSON)`) : null,
-        descriptor ? " · " : null,
+        element("a", { href: new URL(descriptor.path, options.downloadBase).href }, `${isCds ? "CDS" : "Representative proteins"} and export metadata (JSON)`), " · ",
         element("a", { href: "assets/vendor/kalign-3.3.1/SOURCE.md" }, "Kalign source and license")));
   }
 
   async function open(options) {
     cancel();
     const { dialog, body, example, members } = options;
-    const references = members.filter((member) => !isUser(member));
-    const users = members.filter(isUser);
-    const missingCds = users.filter((member) => !member.cds);
-    const cdsAvailable = missingCds.length === 0 && (!references.length || Boolean(example?.cds));
-    const stem = example?.path.split("/").pop().replace(/\.json$/, "") || "user_sequences";
-    const filename = stem + (example && users.length ? "_with_user_sequences" : "");
     const session = { controller: new AbortController(), dialog, displayRequest: 0 };
     active = session;
     if (dialog) {
       dialog.classList.add("alignment-dialog");
       dialog.addEventListener("close", () => { if (active === session) cancel(); }, { once: true });
     }
-    const status = element("p", { class: "message", role: "status", "aria-live": "polite" }, "Preparing selected sequences…");
+    const status = element("p", { class: "message", role: "status", "aria-live": "polite" }, "Loading representative protein sequences…");
     const view = element("div", { class: "msa-output" });
     const downloads = element("div", { class: "msa-downloads" });
     const actions = element("div", { class: "msa-actions" });
@@ -369,35 +295,31 @@ window.ProteinAlignmentView = (() => {
     proteinButton.setAttribute("aria-pressed", "true");
     cdsButton.setAttribute("aria-pressed", "false");
     const modes = element("div", { class: "segmented msa-modes", role: "group", "aria-label": "Sequence type" }, proteinButton, cdsButton);
-    const cdsNote = element("p", { class: "muted small msa-cds-availability" }, cdsAvailable ? ""
-      : missingCds.length ? `CDS view is unavailable: no CDS was supplied for ${missingCds.map((member) => member.gene_id).join(", ")}. Deselect these protein-only records to view bases.`
-        : "CDS view is unavailable for one or more reference sequences.");
-    cdsNote.hidden = cdsAvailable;
     let rows, result, proteinAligned, cdsRows, cdsProjection, cdsTask;
 
     async function showMode(mode) {
       const request = ++session.displayRequest;
       const isCds = mode === "CDS";
-      if (isCds && !cdsAvailable) return;
       proteinButton.setAttribute("aria-pressed", String(!isCds));
       cdsButton.setAttribute("aria-pressed", String(isCds));
       status.classList.remove("error");
       delete view.dataset.complete;
       downloads.replaceChildren();
+      const stem = example.path.split("/").pop().replace(/\.json$/, "");
       try {
         if (!isCds) {
           renderAlignment(view, proteinAligned, result);
           view.append(methodDetails(options, result, false));
           downloads.append(
-            downloadButton("Download alignment (FASTA)", () => download(fasta(proteinAligned), `${filename}_kalign_3.3.1.faa`, "text/plain")),
-            downloadButton("Download proteins (FASTA)", () => download(fasta(rows), `${filename}_proteins.faa`, "text/plain")),
-            downloadButton("Download members (TSV)", () => download(memberTable(rows), `${filename}_members.tsv`, "text/tab-separated-values")),
+            downloadButton("Download alignment (FASTA)", () => download(fasta(proteinAligned), `${stem}_kalign_3.3.1.faa`, "text/plain")),
+            downloadButton("Download proteins (FASTA)", () => download(fasta(rows), `${stem}_proteins.faa`, "text/plain")),
+            downloadButton("Download members (TSV)", () => download(memberTable(rows), `${stem}_members.tsv`, "text/tab-separated-values")),
           );
           status.textContent = `${rows.length} proteins aligned in your browser with ${result.algorithm} ${result.version}.`;
         } else {
           status.textContent = "Loading and validating the matching CDS sequences…";
           view.replaceChildren(element("p", { class: "muted" }, "CDS codons will follow the protein alignment."));
-          if (!cdsTask) cdsTask = selectedCds(options, rows, session.controller.signal).catch((error) => { cdsTask = null; throw error; });
+          if (!cdsTask) cdsTask = fetchCds(options, rows, session.controller.signal).catch((error) => { cdsTask = null; throw error; });
           cdsRows = await cdsTask;
           if (session.controller.signal.aborted || active !== session || request !== session.displayRequest) return;
           if (!cdsProjection) cdsProjection = window.CodonAlignment.validateAndProject(rows, result.aligned, cdsRows);
@@ -406,9 +328,9 @@ window.ProteinAlignmentView = (() => {
           renderAlignment(view, alignedCds, cdsProjection, "CDS");
           view.append(methodDetails(options, result, true));
           downloads.append(
-            downloadButton("Download CDS alignment (FASTA)", () => download(fasta(alignedCds), `${filename}_protein_guided_cds.fna`, "text/plain")),
-            downloadButton("Download CDS (FASTA)", () => download(fasta(cdsRows), `${filename}_cds.fna`, "text/plain")),
-            downloadButton("Download members (TSV)", () => download(cdsMemberTable(rows, cdsRows), `${filename}_cds_members.tsv`, "text/tab-separated-values")),
+            downloadButton("Download CDS alignment (FASTA)", () => download(fasta(alignedCds), `${stem}_protein_guided_cds.fna`, "text/plain")),
+            downloadButton("Download CDS (FASTA)", () => download(fasta(cdsRows), `${stem}_cds.fna`, "text/plain")),
+            downloadButton("Download members (TSV)", () => download(cdsMemberTable(rows, cdsRows), `${stem}_cds_members.tsv`, "text/tab-separated-values")),
           );
           status.textContent = `${cdsRows.length} CDS sequences shown in the protein alignment, with codons kept together.`;
         }
@@ -431,23 +353,20 @@ window.ProteinAlignmentView = (() => {
     retry.hidden = true;
     actions.append(cancelButton, retry);
     body.replaceChildren(
-      element(dialog ? "h2" : "h3", {}, example && references.length
-        ? `Sequence alignment · ${example.subgenome} · ${options.chromosomes.join(" / ")}` : "Sequence alignment · Your sequences"),
-      element("p", { class: "msa-intro" }, references.length
-        ? `Sample for ${options.homeologs.id}: one representative isoform per selected annotation. `
-          + `The original query is on ${options.homeologs.sg}; reference candidates are from ${example.subgenome}. `
-          + (users.length ? `${users.length} locally supplied sequence${users.length === 1 ? " is" : "s are"} also included.` : "")
-        : "Only your selected FASTA records are aligned. No reference sequence download is needed."),
-      modes, cdsNote, status, actions, downloads, view,
+      element(dialog ? "h2" : "h3", {}, `Sequence alignment · ${example.subgenome} · ${options.chromosomes.join(" / ")}`),
+      element("p", { class: "msa-intro" }, `Sample for ${options.homeologs.id}: one representative isoform per selected annotation. `
+        + `The original query is on ${options.homeologs.sg}; this alignment compares the ${example.subgenome} candidates.`),
+      modes, status, actions, downloads, view,
     );
     if (dialog && !dialog.open) dialog.showModal();
     try {
-      require(members.length >= 2 && members.length <= 50, "Select between 2 and 50 sequences to make an alignment.");
-      rows = await selectedSequences(options, session.controller.signal);
+      require(members.length >= 2, "Select at least two annotations to make an alignment.");
+      rows = await fetchSequences(options, session.controller.signal);
       if (session.controller.signal.aborted || active !== session) return;
+      const stem = example.path.split("/").pop().replace(/\.json$/, "");
       downloads.append(
-        downloadButton("Download proteins (FASTA)", () => download(fasta(rows), `${filename}_proteins.faa`, "text/plain")),
-        downloadButton("Download members (TSV)", () => download(memberTable(rows), `${filename}_members.tsv`, "text/tab-separated-values")),
+        downloadButton("Download proteins (FASTA)", () => download(fasta(rows), `${stem}_proteins.faa`, "text/plain")),
+        downloadButton("Download members (TSV)", () => download(memberTable(rows), `${stem}_members.tsv`, "text/tab-separated-values")),
       );
       status.textContent = `Aligning ${rows.length} proteins in your browser…`;
       result = await window.ProteinAlignment.run(rows.map(({ name, sequence }) => ({ name, sequence })), {
@@ -458,7 +377,7 @@ window.ProteinAlignmentView = (() => {
       const aligned = new Map(result.aligned.map((row) => [row.name, row.sequence]));
       proteinAligned = rows.map((row) => ({ ...row, sequence: aligned.get(row.name) }));
       proteinButton.disabled = false;
-      cdsButton.disabled = !cdsAvailable;
+      cdsButton.disabled = !example.cds;
       await showMode("protein");
       cancelButton.hidden = true;
       retry.hidden = false;

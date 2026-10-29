@@ -46,14 +46,14 @@ self.onmessage = async ({ data }) => {
     });
     const sequences = data.sequences;
     engine.FS.writeFile("/input.fa", sequences.map((row) => `>${row.name}\n${row.sequence}\n`).join(""));
-    progress(`Aligning ${sequences.length} selected proteins in your browser…`);
+    progress(`Aligning ${sequences.length} representative proteins in your browser…`);
     const parameters = ["-i", "/input.fa", "-o", "/aligned.fa", "--format", "fasta"];
     const computeStarted = performance.now();
     engine.callMain(parameters);
     const computeMs = Math.round(performance.now() - computeStarted);
     if (!engine.FS.analyzePath("/aligned.fa").exists) throw new Error("Kalign did not produce an alignment.");
     if (!log.some((line) => line.includes("Detected protein sequences."))) {
-      throw new Error("Kalign detected a nucleotide-like alphabet. Check the input type. This build cannot force protein mode for some low-complexity proteins.");
+      throw new Error("Kalign did not recognize the selected sequences as proteins.");
     }
     if (stderr.length || log.some((line) => line.includes("offending character:"))) {
       throw new Error("Kalign reported an input error. The original sequences have not been changed.");
@@ -73,7 +73,7 @@ self.onmessage = async ({ data }) => {
     // Keep low-level filesystem paths and engine internals out of the user message.
     const safeMessages = new Set([
       "Kalign did not produce an alignment.",
-      "Kalign detected a nucleotide-like alphabet. Check the input type. This build cannot force protein mode for some low-complexity proteins.",
+      "Kalign did not recognize the selected sequences as proteins.",
       "Kalign reported an input error. The original sequences have not been changed.",
       "Invalid alignment FASTA header.",
       "Invalid alignment FASTA sequence.",
