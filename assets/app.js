@@ -142,6 +142,7 @@ function badges({ synteny, orthofinder, sharedEntry, qcov, tcov }) {
 }
 
 function openDialog(...content) {
+  window.ProteinAlignmentView?.cancel();
   hideEvidenceTooltip();
   $("#dialog-body").replaceChildren(...content.flat().filter(Boolean));
   const dialog = $("#dialog");
@@ -627,7 +628,8 @@ async function renderHomeologs(container) {
       el("thead", {}, el("tr", {}, el("th", {}, "Genome"),
         hm.subgenomes.map((sg) => el("th", { class: sg === homeologs.sg ? "own-sg" : null },
           `${sg} · ${slots[sg].join("/")}`, el("br"),
-          el("small", {}, sg === homeologs.sg ? "same subgenome: ortholog" : "predicted homeolog"))))),
+          el("small", {}, sg === homeologs.sg ? "same subgenome: ortholog" : "predicted homeolog"),
+          proteinAlignmentButton(homeologs, sg, slots[sg]))))),
       el("tbody", {}, shownGenomes().filter((g) => genomes.includes(g)).map((genome) => {
         const cells = homeologs.t[genomes.indexOf(genome)];
         // The ortholog cell (the query's own subgenome) names an unplaced copy first; the homeolog
@@ -642,6 +644,32 @@ async function renderHomeologs(container) {
       + `Subgenome names: ${hm.subgenome_naming}. ${hm.caveats[0]}`),
   ].filter(Boolean));
   state.homeologs = homeologs;
+}
+
+// This first example is intentionally limited to one query and one SG column.
+// Members come from the displayed Homeologs cells, not from a chromosome-wide search.
+function proteinAlignmentButton(homeologs, sg, chromosomes) {
+  const example = (CONFIG.proteinAlignmentExamples || []).find((item) =>
+    item.queryGenome === state.genome && item.queryId === state.record.id &&
+    item.subgenome === sg && item.group === homeologs.group);
+  if (!example || !CONFIG.downloadBase) return null;
+  return el("div", { class: "protein-alignment-action" }, el("button", {
+    type: "button", class: "secondary", disabled: shownGenomes().length < 2,
+    title: "Sample: align this column's representative proteins in your browser, using the selected annotations",
+    onclick: () => {
+      const hm = state.homeologManifest, c = col.cell;
+      const sgIndex = hm.subgenomes.indexOf(sg);
+      const members = shownGenomes().filter((genome) => hm.target_genomes.includes(genome)).map((genome) => {
+        const cell = homeologs.t[hm.target_genomes.indexOf(genome)][sgIndex];
+        return { genome, gene_id: cell[c.gene_id], chromosome: cell[c.chromosome], start: cell[c.start], end: cell[c.end] };
+      });
+      openDialog();
+      window.ProteinAlignmentView.open({
+        dialog: $("#dialog"), body: $("#dialog-body"), example, members, chromosomes,
+        manifest: state.manifest, homeologs, queryGenome: state.genome, downloadBase: CONFIG.downloadBase,
+      });
+    },
+  }, "Align proteins"), el("span", { class: "muted small" }, " sample"));
 }
 
 // ---- Results, views -------------------------------------------------------------------------------
@@ -806,6 +834,7 @@ function renderFooter(homeologNote) {
 
 // Hide the previous gene, so a failed lookup is never read as showing the result of the new one.
 function clearResult() {
+  window.ProteinAlignmentView?.close();
   hideEvidenceTooltip();
   state.record = null;
   state.homeologs = null;

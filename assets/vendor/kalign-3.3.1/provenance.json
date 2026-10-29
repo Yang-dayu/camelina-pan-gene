@@ -1,0 +1,70 @@
+{
+  "algorithm": "Kalign",
+  "version": "3.3.1",
+  "retrieved_date": "2026-10-29",
+  "distribution": "https://biowasm.com/cdn/v3/kalign/3.3.1/",
+  "upstream_commit": "1d0bfe30d42c1d970f003c09cbf2b43ce9d3871e",
+  "build_recipe_commit": "6b952d26eac6af4ad67045988dc6e7be1b467ffc",
+  "licenses": [
+    "GPL-3.0-or-later (Kalign)",
+    "MIT (Biowasm build recipes)"
+  ],
+  "modified_runtime": false,
+  "files": [
+    {
+      "path": "COPYING",
+      "bytes": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+    },
+    {
+      "path": "kalign.js",
+      "bytes": 90204,
+      "sha256": "e9fcb1299e4580bdd2694cbce3096f5a320ab0d2cf62919cdcfacf00c37293e9"
+    },
+    {
+      "path": "kalign.wasm",
+      "bytes": 136106,
+      "sha256": "722a42e7dfa1a8012e1dd35b5cc444b24ca059d95ead4ce7f9e36f6277951a02"
+    },
+    {
+      "path": "LICENSE.biowasm",
+      "bytes": 1074,
+      "sha256": "444ba5f77cb8ced2531b9258de496e2a2dc75b7df0da7aff7d98561b5b3f1210"
+    },
+    {
+      "path": "SOURCE.md",
+      "bytes": 2038,
+      "sha256": "6412ccfa5c9b7002a6a7fe2a47242a3d6924306d80fe02eea81e9c6372caac6d"
+    },
+    {
+      "path": "source/compile-kalign.sh",
+      "bytes": 156,
+      "sha256": "568c298f974a35394ddd70463d4c8c1cbdc52511a9897bd2b73bb5dd82e9c12b"
+    },
+    {
+      "path": "source/compile-tool.sh",
+      "bytes": 2473,
+      "sha256": "c0ac7e43bb498d89fd203ea4679fedfc633e45756700da0d17937c287a42fea9"
+    },
+    {
+      "path": "source/Dockerfile-dev",
+      "bytes": 198,
+      "sha256": "1d1328f099a002b4042cdfc1f23bc99970e9df96beef2e2547879dbe55297dcd"
+    },
+    {
+      "path": "source/kalign-3.3.1.tar.gz",
+      "bytes": 940835,
+      "sha256": "5b45ed88a5eb4986b7381f98a8ebf4b2d33c47b350d41bac27ffc24a1ac1f6c3"
+    },
+    {
+      "path": "source/shared.sh",
+      "bytes": 1663,
+      "sha256": "1e13be630609c7d9a168581a846d3723570ccc040ccb864fb747be3f4e35c939"
+    },
+    {
+      "path": "source/v3.3.1.patch",
+      "bytes": 588,
+      "sha256": "bd869ec7aae089a714ac0018eff7f5654069554b82ef033b94c4718a53f28baa"
+    }
+  ]
+}

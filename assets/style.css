@@ -207,6 +207,53 @@ td.evidence { white-space: nowrap; }
 .badge.state-ambiguous { color: var(--pg); background: var(--pg-bg); }
 .badge.state-via_own_homeolog { color: var(--of); background: var(--of-bg); }
 
+/* Protein alignment example: keep long sequences inside their own scroll area. */
+.protein-alignment-action { margin-top: 8px; }
+.protein-alignment-action button { font-size: 12px; }
+.details-dialog.alignment-dialog { width: min(1240px, calc(100vw - 32px)); }
+.msa-intro { margin: 0 0 8px; }
+.msa-actions, .msa-downloads, .msa-view-controls, .msa-colour-key, .msa-navigation {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 12px 0;
+}
+.msa-view-controls { justify-content: space-between; font-size: 13px; }
+.msa-view-controls label { cursor: pointer; }
+.msa-scroll { max-width: 100%; max-height: 62vh; overflow: auto; border: 1px solid var(--line); border-radius: 7px; }
+.msa-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.msa-table { width: max-content; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+.msa-table th, .msa-table td { padding: 3px 0; vertical-align: middle; }
+.msa-table thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); }
+.msa-table .msa-label {
+  position: sticky; left: 0; z-index: 1; width: 238px; min-width: 238px; max-width: 238px;
+  padding: 6px 12px; background: var(--surface); border-right: 1px solid var(--line); color: var(--text);
+}
+.msa-table thead .msa-label { z-index: 3; background: var(--surface-2); }
+.msa-label strong, .msa-label code, .msa-label small { display: block; }
+.msa-label code { font-size: 11px; font-weight: 400; }
+.msa-label small { color: var(--muted); font-size: 11px; font-weight: 400; }
+.msa-track { display: flex; width: max-content; padding: 0 10px; font: 13px/24px ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.msa-aa { display: inline-block; flex: 0 0 11px; width: 11px; height: 24px; text-align: center; }
+.msa-ruler { padding-top: 5px; padding-bottom: 5px; color: var(--muted); font-size: 10px; }
+.msa-ruler .msa-aa { overflow: visible; text-align: left; }
+.msa-hydrophobic { background: #dce9fa; color: #173d6a; }
+.msa-basic { background: #e9ddf5; color: #563178; }
+.msa-acidic { background: #f8dddd; color: #852c30; }
+.msa-polar { background: #dceee1; color: #245c36; }
+.msa-special { background: #f9efcb; color: #6d561b; }
+.msa-gap, .msa-unknown { background: var(--surface); color: var(--muted); }
+.msa-highlight-differences tbody .msa-track .msa-aa:not(.msa-difference) { background: var(--surface); color: var(--muted); }
+.msa-highlight-differences tbody .msa-track .msa-difference { box-shadow: inset 0 -2px var(--accent); font-weight: bold; }
+.msa-conservation { align-items: flex-end; height: 24px; }
+.msa-conservation .msa-aa { height: 20px; display: inline-flex; align-items: flex-end; padding: 0 1px; }
+.msa-conservation i { width: 100%; background: var(--accent); min-height: 0; }
+.msa-colour-key { font-size: 12px; }
+.msa-colour-key span { padding: 2px 8px; border-radius: 4px; }
+@media (max-width: 640px) {
+  .details-dialog.alignment-dialog { width: calc(100vw - 16px); max-height: 92vh; padding: 14px; }
+  .msa-table .msa-label { width: 155px; min-width: 155px; max-width: 155px; padding: 6px 8px; }
+  .msa-label code { white-space: normal; overflow-wrap: anywhere; }
+  .msa-downloads button { flex: 1 1 120px; padding: 6px 8px; font-size: 12px; }
+}
+
 /* Legend, downloads, dialog, footer */
 .legend, .downloads { margin-top: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; }
 .legend h2, .downloads h2 { margin: 0 0 8px; font-size: 16px; }
