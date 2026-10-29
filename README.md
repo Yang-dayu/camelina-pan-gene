@@ -15,7 +15,7 @@ protein lengths and evidence. **Download selection (TSV)** records included and 
 Alignment has its own gene selection, separate from annotation filters in the other views.
 Changing the selection clears the previous alignment; a new query starts a new selection.
 The Homeologs table's **Choose sequences** shortcut opens the same selection view. Other queries
-and columns do not yet have sequence exports.
+and columns do not yet have reference sequence exports, but can accept locally supplied FASTA records.
 
 Results appear below the candidate list. Switch between **Protein** and **CDS (bases)**; CDS loads only when
 selected, using the exact same representative transcripts. Each CDS is translation-checked and
@@ -32,6 +32,39 @@ conservation, and downloads of proteins, the aligned FASTA, and member IDs as TS
 Alignment positions are columns in the multiple sequence alignment, not genomic coordinates.
 Length differences and gaps do not by themselves establish biological insertions, deletions, or gene-model errors.
 
+## Add your own sequences
+
+In **Alignment**, choose **Protein** or **CDS (coding DNA)** under **Add your own sequences**,
+then paste FASTA and click **Add pasted sequences**, or choose an uncompressed FASTA file.
+Imported records appear as **User** rows alongside any available reference genes. Include or
+exclude individual rows, remove imports, then click **Run alignment**. To align only your own
+records without looking up a gene, use **Align your own protein or CDS sequences** above the results.
+This aligns the selected records; it does not search the 15 genomes for a new sequence.
+
+User sequences stay in browser memory and are not sent to GitHub, Hugging Face or an alignment
+server. A new lookup or page reload clears them. Neither the input sequences nor their IDs are
+added to the query URL or saved in browser storage. Importing does not start an alignment or fetch
+reference sequences; a user-only alignment requires no reference sequence download.
+
+CDS input must be unaligned, in reading frame 1, without introns, using standard nuclear genetic
+code 1. It is translated for the protein alignment, then its original codons are projected onto
+that alignment. CDS letter case and an optional terminal stop are retained in the original CDS
+download. Internal definite stops and lengths not divisible by three are rejected. IUPAC ambiguous
+bases are retained; an unresolved amino acid becomes X. If any selected user record was supplied
+as protein only, the CDS view is disabled with an explanation; no bases are inferred from protein.
+
+Each record needs a unique FASTA ID within the imported set. Reference IDs and User IDs remain
+separate even if their text matches. The member and selection TSVs record source, input type,
+description and import notes. For User rows, IDs are supplied FASTA labels, not assigned database
+identifiers or correspondence evidence. Protein letters are normalized to uppercase, an optional
+terminal `*` is removed, and spaces/tabs in sequence lines are removed; these changes are recorded
+in the notes. Internal protein stops, U/O/J, gaps, digits and unsupported characters are rejected.
+
+Limits: 2 MiB per import, 50 imported records, 20,000 amino acids per protein, and 2–50 selected
+sequences totaling at most 250,000 amino acids per alignment. This Kalign build detects its input
+alphabet automatically; it rejects a run if nucleotide scoring is detected, including some valid
+low-complexity proteins, rather than returning a nucleotide alignment as a protein result.
+
 Source transcript and protein IDs, including nonrepresentative isoforms, resolve to their parent genes.
 Protein comparisons use one representative protein per gene.
 
@@ -44,6 +77,7 @@ The site reads public data files from the single dataset revision pinned in conf
 - config.js: dataset addresses, example IDs and download links.
 - assets/app.js: queries and result views.
 - assets/alignment-selection.js: candidate gene checkboxes, selection export and explicit run controls.
+- assets/user-sequences.js: local FASTA parsing, input validation and import notes.
 - assets/protein-alignment-view.js: on-demand sequence extraction and the alignment view.
 - assets/codon-alignment.js: validates matched CDS and projects codons onto the protein alignment.
 - assets/browser-alignment.js and assets/browser-alignment.worker.js: isolated browser alignment execution.

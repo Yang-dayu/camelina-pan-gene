@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Camelina Pan-gene Lookup</title>
   <meta name="description" content="Look up a Camelina sativa gene ID across 15 annotations: protein hits, direct synteny, OrthoFinder relations, pan-gene entries and predicted homeologs.">
-  <link rel="stylesheet" href="assets/style.css?v=20261029-alignment-tab-1">
+  <link rel="stylesheet" href="assets/style.css?v=20261029-user-sequences-1">
 </head>
 <body>
   <header class="site-header">
@@ -22,6 +22,7 @@
         <button type="submit" disabled>Look up</button>
       </form>
       <p class="examples">Examples: <span id="examples"></span></p>
+      <p class="small"><a href="#view=alignment">Align your own protein or CDS sequences</a></p>
     </div>
   </header>
 
@@ -38,7 +39,7 @@
           <button type="button" data-view="hits" title="Ranked protein hits in each genome">Hits</button>
           <button type="button" data-view="related" title="Every syntenic or OrthoFinder partner, whatever its hit rank">Related genes</button>
           <button type="button" data-view="homeologs" title="Predicted subgenome copies (SG1, SG2, SG3) in every genome">Homeologs</button>
-          <button type="button" data-view="alignment" title="Choose genes before aligning their representative sequences">Alignment</button>
+          <button type="button" data-view="alignment" title="Choose reference genes or add your own FASTA sequences">Alignment</button>
         </div>
       </div>
       <div class="control" id="hit-controls">
@@ -111,11 +112,12 @@
   </footer>
 
   <!-- Bump the asset tag together whenever page scripts or styles change. -->
-  <script src="config.js?v=20261029-alignment-tab-1"></script>
-  <script src="assets/browser-alignment.js?v=20261029-alignment-tab-1"></script>
-  <script src="assets/codon-alignment.js?v=20261029-alignment-tab-1"></script>
-  <script src="assets/protein-alignment-view.js?v=20261029-alignment-tab-1"></script>
-  <script src="assets/alignment-selection.js?v=20261029-alignment-tab-1"></script>
-  <script src="assets/app.js?v=20261029-alignment-tab-1"></script>
+  <script src="config.js?v=20261029-user-sequences-1"></script>
+  <script src="assets/browser-alignment.js?v=20261029-user-sequences-1"></script>
+  <script src="assets/codon-alignment.js?v=20261029-user-sequences-1"></script>
+  <script src="assets/user-sequences.js?v=20261029-user-sequences-1"></script>
+  <script src="assets/protein-alignment-view.js?v=20261029-user-sequences-1"></script>
+  <script src="assets/alignment-selection.js?v=20261029-user-sequences-1"></script>
+  <script src="assets/app.js?v=20261029-user-sequences-1"></script>
 </body>
 </html>

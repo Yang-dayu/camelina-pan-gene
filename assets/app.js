@@ -244,6 +244,10 @@ function renderControls() {
   for (const id of ["#hit-controls", "#result-download-control", "#genome-controls"]) $(id).hidden = aligning;
   document.querySelectorAll("[data-top]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.top) === state.top)));
   document.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === state.view)));
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    button.disabled = button.dataset.view !== "alignment" && (!state.record ||
+      button.dataset.view === "homeologs" && !state.homeologManifest);
+  });
   const total = state.manifest.target_genomes.length;
   const selected = state.shown.size;
   const count = $("#genome-selection-count");
@@ -666,15 +670,17 @@ function proteinAlignmentButton(homeologs, sg, chromosomes) {
 async function renderAlignmentView(container) {
   const record = state.record;
   const example = (CONFIG.proteinAlignmentExamples || []).find((item) =>
-    item.queryGenome === state.genome && item.queryId === record.id);
-  if (!example || !CONFIG.downloadBase) {
+    item.queryGenome === state.genome && item.queryId === record?.id);
+  if (!example || !CONFIG.downloadBase || !state.homeologManifest) {
     const sample = (CONFIG.proteinAlignmentExamples || [])[0];
-    container.replaceChildren(el("article", { class: "alignment-empty target" },
-      el("h3", {}, "Sequence alignment"),
-      el("p", {}, "Sequence data are not yet available for this query."),
+    const notice = el("article", { class: "alignment-empty target" },
+      el("h3", {}, record ? "Sequence alignment" : "Align your own sequences"),
+      el("p", {}, record ? "Sequence data are not yet available for this query." : "Add at least two protein or CDS FASTA records below."),
+      el("p", { class: "muted" }, "User sequences are processed on this device. An alignment compares the sequences you select; it does not search all 15 genomes."),
       sample ? el("p", {}, "Try the available sample: ", el("a", {
         href: `#q=${encodeURIComponent(sample.queryId)}&g=${encodeURIComponent(sample.queryGenome)}&view=alignment`,
-      }, `${sample.queryGenome}: ${sample.queryId}`), ` · ${sample.subgenome}.`) : null));
+      }, `${sample.queryGenome}: ${sample.queryId}`), ` · ${sample.subgenome}.`) : null);
+    renderAlignmentPicker(container, { record, members: [], notice });
     return;
   }
   container.replaceChildren(el("p", { class: "muted" }, "Loading the candidate gene list…"));
@@ -696,28 +702,47 @@ async function renderAlignmentView(container) {
         evidence: cellEvidence(cell), state: cell[c.state], flags: cell[c.flags], cell,
       };
     });
-    const key = `${state.genome}:${record.k}:${example.path}`;
-    if (state.alignment?.key !== key) {
-      state.alignment = { key, selected: new Set(members.filter((m) => m.gene_id).map(window.AlignmentSelection.key)) };
-    }
-    let picker;
-    picker = window.AlignmentSelection.render(container, {
-      queryId: record.id, label: `${example.subgenome} · ${chromosomes.join(" / ")}`,
-      members, selected: state.alignment.selected,
-      onSelectionChange: () => {
-        window.ProteinAlignmentView.close();
-        picker?.output.replaceChildren(el("p", { class: "muted" }, "Selection changed. Run alignment to compare the selected genes."));
-      },
-      onRun: (selected) => window.ProteinAlignmentView.open({
-        body: picker.output, dialog: null, example, members: selected, chromosomes,
-        manifest: state.manifest, homeologs, queryGenome: state.genome, downloadBase: CONFIG.downloadBase,
-      }),
-      onDetails: (member) => openCellDetails(member.genome, example.subgenome, member.cell),
-    });
+    renderAlignmentPicker(container, { record, example, members, chromosomes, homeologs });
   } catch (error) {
     if (state.view !== "alignment" || state.record !== record) return;
     container.replaceChildren(el("p", { class: "message error" }, notAvailable(error)));
   }
+}
+
+function renderAlignmentPicker(container, context) {
+  const { record, example, members, chromosomes = [], homeologs, notice } = context;
+  const key = record ? `${state.genome}:${record.k}:${example?.path || "user"}` : "user-only";
+  if (state.alignment?.key !== key) {
+    state.alignment = { key, selected: new Set(members.filter((member) => member.gene_id).map(window.AlignmentSelection.key)),
+      users: [], importDraft: {} };
+  }
+  const selection = state.alignment;
+  const current = () => state.view === "alignment" && state.record === record && state.alignment === selection;
+  let picker;
+  const changed = () => {
+    window.ProteinAlignmentView.close();
+    picker?.output.replaceChildren(el("p", { class: "muted" }, "Selection changed. Run alignment to compare the selected sequences."));
+  };
+  picker = window.AlignmentSelection.render(container, {
+    queryId: record?.id || "user_sequences", label: example ? `${example.subgenome} · ${chromosomes.join(" / ")}` : "Your sequences",
+    members, selected: selection.selected, userMembers: selection.users, importDraft: selection.importDraft,
+    referenceCdsAvailable: Boolean(example?.cds),
+    onSelectionChange: changed,
+    onUserChange: () => {
+      if (!current()) return;
+      window.ProteinAlignmentView.close();
+      renderAlignmentPicker(container, context);
+    },
+    onRun: (selected) => {
+      if (!current()) return;
+      window.ProteinAlignmentView.open({
+        body: picker.output, dialog: null, example, members: selected, chromosomes,
+        manifest: state.manifest, homeologs, queryGenome: state.genome, downloadBase: CONFIG.downloadBase,
+      });
+    },
+    onDetails: example ? (member) => openCellDetails(member.genome, example.subgenome, member.cell) : null,
+  });
+  if (notice) container.prepend(notice);
 }
 
 // ---- Results, views -------------------------------------------------------------------------------
@@ -726,9 +751,9 @@ function renderResults() {
   window.ProteinAlignmentView?.close();
   hideEvidenceTooltip();
   const results = $("#results");
-  if (!state.record) { results.hidden = true; $("#legend").hidden = true; return; }
+  if (!state.record && state.view !== "alignment") { results.hidden = true; $("#legend").hidden = true; return; }
   results.hidden = false;
-  $("#legend").hidden = false;
+  $("#legend").hidden = state.view === "alignment";
   if (state.view === "overview") results.replaceChildren(renderOverview());
   else if (state.view === "hits") results.replaceChildren(...[renderPerGenome(hitsTable)].flat());
   else if (state.view === "related") results.replaceChildren(...[renderPerGenome(relatedTable)].flat());
@@ -935,8 +960,16 @@ function fromHash() {
   const params = new URLSearchParams(location.hash.slice(1));
   const requestedView = params.get("view");
   if (["overview", "hits", "related", "homeologs", "alignment"].includes(requestedView) &&
-      (!["homeologs", "alignment"].includes(requestedView) || state.homeologManifest)) state.view = requestedView;
+      (requestedView !== "homeologs" || state.homeologManifest)) state.view = requestedView;
   if (params.get("q")) lookup(params.get("q"), params.get("g") || "");
+  else if (requestedView === "alignment") {
+    ++state.lookupSeq;
+    clearResult();
+    message(null);
+    state.shown ||= new Set(state.manifest.target_genomes);
+    renderControls();
+    renderResults();
+  }
 }
 
 function go(id, genome) {
@@ -946,14 +979,14 @@ function go(id, genome) {
 
 function setView(view) {
   if (!["overview", "hits", "related", "homeologs", "alignment"].includes(view)) return;
-  if (["homeologs", "alignment"].includes(view) && !state.homeologManifest) return;
+  if (view === "homeologs" && !state.homeologManifest) return;
   state.view = view;
   const params = new URLSearchParams(location.hash.slice(1));
   if (params.get("q")) {
     params.set("view", view);
     history.replaceState(null, "", `#${params}`);
   }
-  if (state.record) { renderControls(); renderResults(); }
+  if (state.record || view === "alignment") { renderControls(); renderResults(); }
 }
 
 async function start() {
@@ -986,7 +1019,6 @@ async function start() {
   } catch (error) {
     state.homeologManifest = null;
     $("[data-view=homeologs]").disabled = true;
-    $("[data-view=alignment]").disabled = true;
     homeologNote = `Homeologs disabled: ${error.message}`;
   }
 
