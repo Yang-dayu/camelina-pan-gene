@@ -242,12 +242,14 @@ window.ProteinAlignmentView = (() => {
     alignmentResizeObserver.observe(viewport);
   }
 
-  function cancel() {
+  function cancel(onlyDialog = false) {
+    // Opening ordinary evidence details must not cancel an inline alignment.
+    if (onlyDialog && active && !active.dialog) return;
     alignmentResizeObserver?.disconnect();
     alignmentResizeObserver = null;
     if (active) {
       active.controller.abort();
-      active.dialog.classList.remove("alignment-dialog");
+      active.dialog?.classList.remove("alignment-dialog");
       active = null;
     }
   }
@@ -278,8 +280,10 @@ window.ProteinAlignmentView = (() => {
     const { dialog, body, example, members } = options;
     const session = { controller: new AbortController(), dialog, displayRequest: 0 };
     active = session;
-    dialog.classList.add("alignment-dialog");
-    dialog.addEventListener("close", () => { if (active === session) cancel(); }, { once: true });
+    if (dialog) {
+      dialog.classList.add("alignment-dialog");
+      dialog.addEventListener("close", () => { if (active === session) cancel(); }, { once: true });
+    }
     const status = element("p", { class: "message", role: "status", "aria-live": "polite" }, "Loading representative protein sequences…");
     const view = element("div", { class: "msa-output" });
     const downloads = element("div", { class: "msa-downloads" });
@@ -349,12 +353,12 @@ window.ProteinAlignmentView = (() => {
     retry.hidden = true;
     actions.append(cancelButton, retry);
     body.replaceChildren(
-      element("h2", {}, `Sequence alignment · ${example.subgenome} · ${options.chromosomes.join(" / ")}`),
+      element(dialog ? "h2" : "h3", {}, `Sequence alignment · ${example.subgenome} · ${options.chromosomes.join(" / ")}`),
       element("p", { class: "msa-intro" }, `Sample for ${options.homeologs.id}: one representative isoform per selected annotation. `
         + `The original query is on ${options.homeologs.sg}; this alignment compares the ${example.subgenome} candidates.`),
       modes, status, actions, downloads, view,
     );
-    if (!dialog.open) dialog.showModal();
+    if (dialog && !dialog.open) dialog.showModal();
     try {
       require(members.length >= 2, "Select at least two annotations to make an alignment.");
       rows = await fetchSequences(options, session.controller.signal);

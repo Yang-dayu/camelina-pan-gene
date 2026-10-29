@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Camelina Pan-gene Lookup</title>
   <meta name="description" content="Look up a Camelina sativa gene ID across 15 annotations: protein hits, direct synteny, OrthoFinder relations, pan-gene entries and predicted homeologs.">
-  <link rel="stylesheet" href="assets/style.css?v=20261029-cds-1">
+  <link rel="stylesheet" href="assets/style.css?v=20261029-alignment-tab-1">
 </head>
 <body>
   <header class="site-header">
@@ -38,19 +38,20 @@
           <button type="button" data-view="hits" title="Ranked protein hits in each genome">Hits</button>
           <button type="button" data-view="related" title="Every syntenic or OrthoFinder partner, whatever its hit rank">Related genes</button>
           <button type="button" data-view="homeologs" title="Predicted subgenome copies (SG1, SG2, SG3) in every genome">Homeologs</button>
+          <button type="button" data-view="alignment" title="Choose genes before aligning their representative sequences">Alignment</button>
         </div>
       </div>
-      <div class="control">
+      <div class="control" id="hit-controls">
         <span class="control-label">Show</span>
         <div class="segmented" role="group" aria-label="Number of hits">
           <button type="button" data-top="5">Top 5</button>
           <button type="button" data-top="10">Top 10</button>
         </div>
       </div>
-      <div class="control">
+      <div class="control" id="result-download-control">
         <button type="button" id="download" class="secondary" title="Save what this view shows, for all selected genomes, as a tab-separated file">Download this result (TSV)</button>
       </div>
-      <div class="control control-genomes">
+      <div class="control control-genomes" id="genome-controls">
         <div class="genome-selection-header">
           <div class="genome-selection-title">
             <span class="control-label" id="genome-selection-label">Annotations</span>
@@ -110,10 +111,11 @@
   </footer>
 
   <!-- Bump the asset tag together whenever page scripts or styles change. -->
-  <script src="config.js?v=20261029-cds-1"></script>
-  <script src="assets/browser-alignment.js?v=20261029-cds-1"></script>
-  <script src="assets/codon-alignment.js?v=20261029-cds-1"></script>
-  <script src="assets/protein-alignment-view.js?v=20261029-cds-1"></script>
-  <script src="assets/app.js?v=20261029-cds-1"></script>
+  <script src="config.js?v=20261029-alignment-tab-1"></script>
+  <script src="assets/browser-alignment.js?v=20261029-alignment-tab-1"></script>
+  <script src="assets/codon-alignment.js?v=20261029-alignment-tab-1"></script>
+  <script src="assets/protein-alignment-view.js?v=20261029-alignment-tab-1"></script>
+  <script src="assets/alignment-selection.js?v=20261029-alignment-tab-1"></script>
+  <script src="assets/app.js?v=20261029-alignment-tab-1"></script>
 </body>
 </html>

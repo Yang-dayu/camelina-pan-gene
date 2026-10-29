@@ -6,19 +6,26 @@ Query results can be downloaded as TSV.
 
 ## Protein and CDS alignment example
 
-Look up `CsJoelle.01G002700` in Joelle, open **Homeologs**, and click **Align sequences**
-under **SG1 · Chr19**. The example compares one existing representative protein per selected
-annotation (15 by default). Select at least two annotations. Other queries and columns do not yet
-have a sequence export.
+Look up `CsJoelle.01G002700` in Joelle and open **Alignment**, next to Hits, Related genes and
+Homeologs. The available sample is **SG1 · Chr19**, with one current primary candidate per
+annotation (15 by default). Include or exclude individual genes, then click **Run alignment**.
+At least two genes are required. The candidate list shows IDs, genomic positions, representative
+protein lengths and evidence. **Download selection (TSV)** records included and excluded rows.
 
-Switch between **Protein** and **CDS (bases)** in the alignment window. CDS loads only when
+Alignment has its own gene selection, separate from annotation filters in the other views.
+Changing the selection clears the previous alignment; a new query starts a new selection.
+The Homeologs table's **Choose sequences** shortcut opens the same selection view. Other queries
+and columns do not yet have sequence exports.
+
+Results appear below the candidate list. Switch between **Protein** and **CDS (bases)**; CDS loads only when
 selected, using the exact same representative transcripts. Each CDS is translation-checked and
 its codons follow the protein alignment; each protein gap becomes three base gaps. The CDS view
 does not include introns, UTRs or promoters. Terminal stop codons remain in the original CDS
 download and are omitted from the aligned view. Displayed bases use uppercase; downloads retain
 the source letter case. Original CDS, aligned CDS and CDS member metadata can be downloaded.
 
-Unaligned sequences are fetched from the pinned Hugging Face revision when the alignment is opened.
+Opening the candidate list does not fetch sequences or start computation. Unaligned proteins
+are fetched from the pinned Hugging Face revision only when **Run alignment** is clicked.
 Kalign 3.3.1 runs in a browser worker on the visitor's device; the alignment is not computed by
 GitHub Pages or Hugging Face. The view supports residue colouring, difference highlighting,
 conservation, and downloads of proteins, the aligned FASTA, and member IDs as TSV.
@@ -36,6 +43,7 @@ The site reads public data files from the single dataset revision pinned in conf
 - index.html: page structure.
 - config.js: dataset addresses, example IDs and download links.
 - assets/app.js: queries and result views.
+- assets/alignment-selection.js: candidate gene checkboxes, selection export and explicit run controls.
 - assets/protein-alignment-view.js: on-demand sequence extraction and the alignment view.
 - assets/codon-alignment.js: validates matched CDS and projects codons onto the protein alignment.
 - assets/browser-alignment.js and assets/browser-alignment.worker.js: isolated browser alignment execution.

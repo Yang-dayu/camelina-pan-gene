@@ -210,6 +210,29 @@ td.evidence { white-space: nowrap; }
 /* Protein alignment example: keep long sequences inside their own scroll area. */
 .protein-alignment-action { margin-top: 8px; }
 .protein-alignment-action button { font-size: 12px; }
+.alignment-picker .alignment-selection-intro { margin: 12px 16px; }
+.alignment-selection-actions, .alignment-run-controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 0 16px 12px;
+}
+.alignment-run-controls { padding-top: 12px; border-top: 1px solid var(--line); }
+.alignment-run {
+  border: 0; border-radius: 8px; padding: 8px 16px; background: var(--accent);
+  color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer;
+}
+.alignment-run:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.alignment-picker .table-wrap { max-height: 480px; overflow: auto; }
+.alignment-candidates thead th { position: sticky; top: 0; z-index: 1; }
+.alignment-candidates th[scope="row"] { color: var(--text); background: var(--surface); }
+.alignment-include { width: 55px; text-align: center; }
+.alignment-include input { width: 17px; height: 17px; margin: 3px 0; padding: 0; accent-color: var(--accent); }
+.alignment-excluded td, .alignment-excluded th[scope="row"] { color: var(--muted); background: var(--surface-2); }
+.alignment-output { min-width: 0; }
+.alignment-output:not(:empty), .alignment-empty { padding: 16px; }
+.alignment-output:not(:empty) {
+  margin: 16px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+}
+.alignment-output h3, .alignment-empty h3 { margin: 0 0 10px; font-size: 18px; }
+.alignment-empty p:last-child { margin-bottom: 0; }
 .details-dialog.alignment-dialog { width: min(1240px, calc(100vw - 32px)); }
 .msa-intro { margin: 0 0 8px; }
 .msa-actions, .msa-downloads, .msa-view-controls, .msa-colour-key, .msa-navigation {
