@@ -3,42 +3,183 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Camelina Pan-gene Lookup</title>
-  <meta name="description" content="Look up a Camelina sativa gene ID across 15 annotations: protein hits, direct synteny, OrthoFinder relations, pan-gene entries and predicted homeologs.">
-  <link rel="stylesheet" href="assets/style.css?v=20261029-reference-alignment-1">
+  <title>Camelina Pan-Gene Database</title>
+  <meta name="description" content="Camelina Pan-Gene Database: gene correspondence, homeologs and functional annotation across 18 annotations of 14 Camelina sativa accessions, with protein and CDS sequences and in-browser alignment.">
+  <meta name="theme-color" content="#0f3a2b">
+  <script>
+    // Apply a saved colour theme before the first paint; without one the page follows the system setting.
+    try { const theme = localStorage.getItem("pangene-theme"); if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme; } catch (error) {}
+    // 界面语言：仅地址里的 ?lang=zh 打开中文，普通链接默认英文。中文时先把页面藏起来，app.js 翻译完再显示（最多 3 秒），免得先闪一下英文。
+    // Interface language: only ?lang=zh opens Chinese; ordinary links default to English. For Chinese the page stays hidden until
+    // app.js has translated it (at most 3 s), so the English text does not flash first.
+    try {
+      const lang = new URLSearchParams(location.search).get("lang");
+      if (lang === "zh") {
+        document.documentElement.lang = "zh-CN";
+        document.documentElement.classList.add("i18n-pending");
+        setTimeout(() => document.documentElement.classList.remove("i18n-pending"), 3000);
+      }
+    } catch (error) {}
+  </script>
+  <link rel="stylesheet" href="assets/style.css?v=20261105-ui-40">
 </head>
-<body>
-  <header class="site-header">
-    <div class="wrap">
-      <h1>Camelina sativa pan-gene lookup</h1>
-      <p class="subtitle">Find a gene's counterparts in 15 annotations, with the sequence, synteny and orthology evidence behind each one.</p>
-      <form id="search" class="search" autocomplete="off">
-        <label class="visually-hidden" for="gene-input">Gene, transcript or protein ID</label>
-        <input id="gene-input" name="gene" type="search" placeholder="Loading data description…" required disabled>
-        <label class="visually-hidden" for="genome-select">Genome</label>
-        <select id="genome-select" name="genome" title="Only needed when an ID exists in several genomes" disabled>
-          <option value="">any genome</option>
-        </select>
-        <button type="submit" disabled>Look up</button>
-      </form>
-      <p class="examples">Examples: <span id="examples"></span></p>
+<body class="is-home">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#" id="home-link" aria-label="Camelina Pan-Gene Database: start page">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="15" class="brand-ring"/>
+          <path d="M9 22c3-9 11-14 15-13-1 5-6 12-15 13z" class="brand-leaf"/>
+          <circle cx="11.5" cy="11" r="2.1" class="brand-sg1"/>
+          <circle cx="16" cy="8.2" r="2.1" class="brand-sg2"/>
+          <circle cx="20.5" cy="11" r="2.1" class="brand-sg3"/>
+        </svg>
+        <span class="brand-name" data-i18n="brand.name">Camelina <strong>Pan-Gene</strong> Database</span>
+      </a>
+      <nav class="topnav" id="topnav" aria-label="Site">
+        <!-- 窄屏上这几个链接收进菜单按钮 / on phones these links fold into the menu button -->
+        <div class="topnav-links" id="topnav-links">
+          <button type="button" id="about-link" class="nav-link nav-button">About</button>
+          <button type="button" id="data-link" class="nav-link nav-button">Data</button>
+          <button type="button" id="methods-link" class="nav-link nav-button">Methods</button>
+          <a id="dataset-link" class="nav-link" href="#" target="_blank" rel="noopener" hidden>Dataset <span aria-hidden="true">↗</span></a>
+        </div>
+        <!-- 语言菜单：地球图标，点开选 English / 中文；整块不翻译
+             Language menu: a globe icon opening a list of English / 中文; the block is never translated -->
+        <div class="lang-menu no-i18n" id="lang-menu">
+          <button type="button" id="lang-toggle" class="icon-button" aria-haspopup="menu" aria-expanded="false" aria-controls="lang-list" aria-label="Language · 语言" title="Language · 语言">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4M12 2.8a14 14 0 0 1 3.8 9.2 14 14 0 0 1-3.8 9.2 14 14 0 0 1-3.8-9.2 14 14 0 0 1 3.8-9.2z"/></svg>
+          </button>
+          <div class="lang-list" id="lang-list" role="menu" hidden>
+            <button type="button" class="lang-option" role="menuitemradio" data-lang="en" lang="en" aria-checked="true">English</button>
+            <button type="button" class="lang-option" role="menuitemradio" data-lang="zh" lang="zh-CN" aria-checked="false">中文</button>
+          </div>
+        </div>
+        <button type="button" id="theme-toggle" class="icon-button" aria-label="Switch between light and dark colours" title="Switch between light and dark colours">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-moon"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg>
+        </button>
+        <button type="button" id="menu-toggle" class="icon-button menu-button" aria-expanded="false" aria-controls="topnav-links" aria-label="Menu" title="Menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </nav>
     </div>
   </header>
 
-  <main class="wrap">
+  <section class="hero" id="hero">
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <!-- 站名是属名 Camelina；物种全名放在这行小字里 / the name uses the genus; the full species name sits in this line -->
+        <p class="eyebrow">Camelina sativa · allohexaploid oilseed · 20 chromosomes · three subgenomes</p>
+        <!-- 标题若要断行，在 "Pan-Gene Database" 前断 / if the title wraps, it breaks before "Pan-Gene Database" -->
+        <h1 data-i18n="hero.title">Camelina <span class="keep-together">Pan&#8209;Gene Database</span></h1>
+        <p class="subtitle">Gene correspondence, homeologs and functional annotation across 18 annotations of 14 accessions.</p>
+        <form id="search" class="search" autocomplete="off">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+          <label class="visually-hidden" for="gene-input">Gene, transcript or protein ID</label>
+          <input id="gene-input" name="gene" type="search" placeholder="Loading data description…" required disabled>
+          <label class="visually-hidden" for="genome-select">Genome</label>
+          <select id="genome-select" name="genome" title="Only needed when an ID exists in several genomes" disabled>
+            <option value="">any genome</option>
+          </select>
+          <button type="submit" disabled>Look up</button>
+        </form>
+        <div class="examples">
+          <span class="examples-label">Try</span>
+          <span id="examples"></span>
+          <details class="more-examples">
+            <summary>One example per annotation</summary>
+            <div id="examples-all" class="examples-all"></div>
+          </details>
+        </div>
+      </div>
+      <figure class="hero-art">
+        <!-- 20 条染色体按亚基因组分组（Chaudhary et al. 2020 的命名），长度按 DH55 V3 组装成比例（Chr11 = 50.7 Mb = 132 px）。
+             20 chromosomes by subgenome (naming of Chaudhary et al. 2020), lengths to scale from the DH55 V3 assembly
+             (Chr11 = 50.7 Mb = 132 px). The arcs join the homeolog group chosen in the table below (G2 by default);
+             app.js draws them from data-chr. 点下表的组（或点染色体）就换成那个组的弧线 / click a group in the table
+             (or a chromosome) to show that group. -->
+        <svg viewBox="0 0 384 196" aria-hidden="true" id="karyo-figure">
+          <g class="karyo sg1">
+            <rect data-chr="Chr04" x="8" y="69" width="10" height="85" rx="5"><title>Chr04 · SG1 · 32.6 Mb</title></rect>
+            <rect data-chr="Chr07" x="26" y="66.5" width="10" height="87.5" rx="5"><title>Chr07 · SG1 · 33.6 Mb</title></rect>
+            <rect data-chr="Chr08" x="44" y="74.9" width="10" height="79.1" rx="5"><title>Chr08 · SG1 · 30.4 Mb</title></rect>
+            <rect data-chr="Chr11" x="62" y="22" width="10" height="132" rx="5"><title>Chr11 · SG1 · 50.7 Mb</title></rect>
+            <rect data-chr="Chr14" x="80" y="67.2" width="10" height="86.8" rx="5" class="karyo-linked"><title>Chr14 · SG1 · 33.3 Mb</title></rect>
+            <rect data-chr="Chr19" x="98" y="81.1" width="10" height="72.9" rx="5"><title>Chr19 · SG1 · 28.0 Mb</title></rect>
+          </g>
+          <g class="karyo sg2">
+            <rect data-chr="Chr01" x="124" y="85.1" width="10" height="68.9" rx="5"><title>Chr01 · SG2 · 26.5 Mb</title></rect>
+            <rect data-chr="Chr03" x="142" y="73.8" width="10" height="80.2" rx="5" class="karyo-linked"><title>Chr03 · SG2 · 30.8 Mb</title></rect>
+            <rect data-chr="Chr06" x="160" y="80" width="10" height="74" rx="5"><title>Chr06 · SG2 · 28.4 Mb</title></rect>
+            <rect data-chr="Chr10" x="178" y="84.7" width="10" height="69.3" rx="5"><title>Chr10 · SG2 · 26.6 Mb</title></rect>
+            <rect data-chr="Chr13" x="196" y="85.3" width="10" height="68.7" rx="5"><title>Chr13 · SG2 · 26.4 Mb</title></rect>
+            <rect data-chr="Chr16" x="214" y="70.3" width="10" height="83.7" rx="5"><title>Chr16 · SG2 · 32.1 Mb</title></rect>
+            <rect data-chr="Chr18" x="232" y="95.4" width="10" height="58.6" rx="5"><title>Chr18 · SG2 · 22.5 Mb</title></rect>
+          </g>
+          <g class="karyo sg3">
+            <rect data-chr="Chr02" x="258" y="70.6" width="10" height="83.4" rx="5"><title>Chr02 · SG3 · 32.0 Mb</title></rect>
+            <rect data-chr="Chr05" x="276" y="57.5" width="10" height="96.5" rx="5"><title>Chr05 · SG3 · 37.0 Mb</title></rect>
+            <rect data-chr="Chr09" x="294" y="48.2" width="10" height="105.8" rx="5"><title>Chr09 · SG3 · 40.6 Mb</title></rect>
+            <rect data-chr="Chr12" x="312" y="49.9" width="10" height="104.1" rx="5"><title>Chr12 · SG3 · 39.9 Mb</title></rect>
+            <rect data-chr="Chr15" x="330" y="67.9" width="10" height="86.1" rx="5"><title>Chr15 · SG3 · 33.0 Mb</title></rect>
+            <rect data-chr="Chr17" x="348" y="57" width="10" height="97" rx="5" class="karyo-linked"><title>Chr17 · SG3 · 37.3 Mb</title></rect>
+            <rect data-chr="Chr20" x="366" y="70.5" width="10" height="83.5" rx="5"><title>Chr20 · SG3 · 32.1 Mb</title></rect>
+          </g>
+          <g class="karyo-numbers">
+            <text data-chr="Chr04" x="13" y="167">04</text><text data-chr="Chr07" x="31" y="167">07</text><text data-chr="Chr08" x="49" y="167">08</text>
+            <text data-chr="Chr11" x="67" y="167">11</text><text data-chr="Chr14" x="85" y="167">14</text><text data-chr="Chr19" x="103" y="167">19</text>
+            <text data-chr="Chr01" x="129" y="167">01</text><text data-chr="Chr03" x="147" y="167">03</text><text data-chr="Chr06" x="165" y="167">06</text>
+            <text data-chr="Chr10" x="183" y="167">10</text><text data-chr="Chr13" x="201" y="167">13</text><text data-chr="Chr16" x="219" y="167">16</text>
+            <text data-chr="Chr18" x="237" y="167">18</text>
+            <text data-chr="Chr02" x="263" y="167">02</text><text data-chr="Chr05" x="281" y="167">05</text><text data-chr="Chr09" x="299" y="167">09</text>
+            <text data-chr="Chr12" x="317" y="167">12</text><text data-chr="Chr15" x="335" y="167">15</text><text data-chr="Chr17" x="353" y="167">17</text>
+            <text data-chr="Chr20" x="371" y="167">20</text>
+          </g>
+          <g class="karyo-labels">
+            <text x="58" y="187">SG1</text><text x="183" y="187">SG2</text><text x="317" y="187">SG3</text>
+          </g>
+          <!-- 没有脚本时的默认弧线（G2）；app.js 会按所选的组重画 / default arcs (G2) without scripts; app.js redraws them -->
+          <g id="karyo-arcs">
+            <path class="karyo-link" d="M85 63 C98 38, 134 40, 147 70"/>
+            <path class="karyo-link" d="M147 70 C205 -4, 305 -6, 353 53"/>
+          </g>
+        </svg>
+        <!-- 七个部分同源组的对照表，app.js 从部分同源数据里生成 / the seven homeolog groups, built by app.js from the homeolog data -->
+        <div id="karyo-groups" class="karyo-groups" hidden></div>
+      </figure>
+    </div>
+    <div class="wrap">
+      <div class="stats" id="hero-stats"></div>
+      <div id="annotation-sources" class="stat-panel annotation-sources" hidden></div>
+      <div id="genome-sizes" class="stat-panel genome-sizes" hidden></div>
+      <div id="family-sharing" class="stat-panel family-sharing" hidden></div>
+    </div>
+  </section>
+
+  <main id="main" class="wrap" tabindex="-1">
     <div id="message" class="message" hidden></div>
 
     <section id="gene" class="gene-card" hidden></section>
+    <section id="gene-description" class="gene-description" hidden></section>
+    <section id="function-panel" class="function-panel" aria-label="Functional annotation" hidden></section>
 
     <section id="controls" class="controls" hidden>
       <div class="control">
         <span class="control-label">View</span>
         <div class="segmented" role="tablist" aria-label="View">
-          <button type="button" data-view="overview" title="One row per annotation: best sequence hit, coverage, direct relations">Overview</button>
-          <button type="button" data-view="hits" title="Ranked protein hits in each genome">Hits</button>
-          <button type="button" data-view="related" title="Every syntenic or OrthoFinder partner, whatever its hit rank">Related genes</button>
-          <button type="button" data-view="homeologs" title="Predicted subgenome copies (SG1, SG2, SG3) in every genome">Homeologs</button>
-          <button type="button" data-view="alignment" title="Choose genes before aligning their representative sequences">Alignment</button>
+          <button type="button" data-view="homeologs" title="The query's copies on SG1, SG2 and SG3 in every annotation; the highlighted column is the copy that corresponds to the query">Homeologs</button>
+          <button type="button" data-view="evidence" title="Ranked protein hits and every syntenic or OrthoFinder partner in each annotation">Evidence</button>
+          <button type="button" data-view="alignment" title="Choose available genes and transcripts before aligning their sequences">Alignment</button>
+        </div>
+      </div>
+      <div class="control" id="evidence-controls">
+        <span class="control-label">List</span>
+        <div class="segmented" role="group" aria-label="Evidence list">
+          <button type="button" data-evidence="hits" title="The best protein hits in each annotation, ranked by bit score">Ranked hits</button>
+          <button type="button" data-evidence="related" title="Every syntenic or OrthoFinder partner, whatever its hit rank">Related genes</button>
         </div>
       </div>
       <div class="control" id="hit-controls">
@@ -56,6 +197,7 @@
           <div class="genome-selection-title">
             <span class="control-label" id="genome-selection-label">Annotations</span>
             <span id="genome-selection-count" class="selection-count" aria-live="polite" aria-atomic="true"></span>
+            <button type="button" id="genome-toggle" class="selection-toggle" aria-expanded="false" aria-controls="genome-chips">Change</button>
           </div>
           <div class="genome-selection-actions" role="group" aria-label="Annotation selection">
             <button type="button" class="selection-button" data-genomes="all">Select all</button>
@@ -68,36 +210,80 @@
 
     <section id="results" class="results" hidden></section>
 
-    <section class="legend" id="legend" hidden>
-      <h2>Reading the results</h2>
+    <details class="legend" id="legend" hidden>
+      <summary data-i18n="legend.summary"><h2>Reading the results</h2><span class="summary-hint">What each column, badge and state means</span></summary>
       <dl>
-        <dt>Best sequence hit</dt>
-        <dd>The highest-scoring protein hit in that genome. It is the strongest sequence match, not necessarily the corresponding gene: a partial or a cross-chromosome match can score higher than the syntenic copy. Open a row to see all hits and the related genes.</dd>
-        <dt><span class="badge syn">synteny</span> <span class="badge anchor">anchor</span></dt>
-        <dd>Direct syntenic pair from GENESPACE (same-numbered chromosomes only); <em>anchor</em> means the pair anchors its block.</dd>
-        <dt><span class="badge of">OrthoFinder</span></dt>
-        <dd>The two genes sit on opposite sides of an OrthoFinder pairwise orthologue row.</dd>
-        <dt><span class="badge pg">same entry</span></dt>
-        <dd>Both genes are in the same pan-gene entry of the query genome's frame. Shared membership is not direct synteny.</dd>
-        <dt><span class="badge partial">partial</span></dt>
-        <dd>One of the two coverages is below 50%: a local match. With high identity this calls for checking the annotation structure; it is not by itself evidence of a split gene.</dd>
-        <dt>Rank</dt>
-        <dd>Order by bit score among every candidate stored for that genome (the self hit is listed separately). Each search reports at most 25 targets, so no hit does not prove absence.</dd>
+        <dt>Annotation names</dt>
+        <dd data-i18n="legend.names">DH55V2 and DH55V3 are two annotations of DH55. SunesonDecker2025 (Montana State University, MSU_CS-sun), SunesonJGI, SunesonFang2023 and SunesonBrock2024 are four annotations of Suneson. Downloaded tables and the dataset files use the data ID <code>Suneson</code> for SunesonDecker2025.</dd>
         <dt>Homeologs</dt>
-        <dd>Camelina sativa is allohexaploid: most genes have three copies, one per subgenome (SG1, SG2, SG3; Chaudhary et al. 2020).
-          The column of the query's own subgenome shows its ortholog in each genome (same chromosome number);
+        <dd data-i18n="legend.homeologs">One row per annotation, one column per subgenome. The highlighted column is the query's own subgenome: the gene that corresponds to the query in that annotation (same chromosome number), with its evidence. The other two columns are its homeologs on the other subgenomes. <em>Top hit</em> under an annotation name marks a strongest protein match that is none of the three, for example a copy on another chromosome or an unplaced sequence.</dd>
+        <dt>Evidence</dt>
+        <dd data-i18n="legend.evidence"><em>Ranked hits</em> lists the best protein hits in each annotation by bit score; <em>Related genes</em> lists every syntenic or OrthoFinder partner, whatever its rank. The strongest sequence match is not necessarily the corresponding gene: in a hexaploid, a copy on another subgenome or a partial match can score higher than the syntenic copy.</dd>
+        <dt><span class="badge syn">synteny</span> <span class="badge anchor">anchor</span></dt>
+        <dd data-i18n="legend.synteny">A pair reported by the same-chromosome GENESPACE run; <em>anchor</em> means the pair anchors its block. Open details for its source run and block.</dd>
+        <dt><span class="badge cross-syn">cross-chromosome synteny</span></dt>
+        <dd data-i18n="legend.cross">A pair reported by the unrestricted companion run on different chromosome numbers. It may connect subgenome copies or a region in a different location; this evidence alone does not establish a direct ortholog or a structural rearrangement.</dd>
+        <dt><span class="badge of">OrthoFinder</span></dt>
+        <dd data-i18n="legend.orthofinder">The two genes sit on opposite sides of an OrthoFinder pairwise orthologue row.</dd>
+        <dt><span class="badge pg">same entry</span></dt>
+        <dd data-i18n="legend.entry">Both genes are in the same pan-gene entry of the query genome's frame. Shared membership is not direct synteny.</dd>
+        <dt><span class="badge partial">partial</span></dt>
+        <dd data-i18n="legend.partial">One of the two coverages is below 50%: a local match. With high identity this calls for checking the annotation structure; it is not by itself evidence of a split gene.</dd>
+        <dt>Rank</dt>
+        <dd data-i18n="legend.rank">Order by bit score among every candidate stored for that genome (the self hit is listed separately). Each search reports at most 25 targets, so no hit does not prove absence.</dd>
+        <dt>Subgenome copies</dt>
+        <dd data-i18n="legend.subgenomes">Camelina sativa is allohexaploid: most genes have three copies, one per subgenome (SG1, SG2, SG3; names as in Chaudhary et al. 2020, groups as in Martin et al. 2022).
+          The column of the query's own subgenome shows the corresponding gene in each annotation (same chromosome number);
           the other two columns show predicted homeologs — the best protein match on that subgenome's chromosome of the
           query's homeolog group. Each cell states its evidence (synteny + OrthoFinder, two routes agree, sequence only, via own homeolog)
           and how many near-equal candidates exist. <span class="badge partial">check</span> marks a pick that another candidate beats on a
           different criterion (for example a near-identical fragment next to the full-length pick), or a near-identical homeolog that
           nothing confirms; open its details to see why. <em>Not found under current rules</em> can mean the copy sits on an unplaced sequence,
           has no protein model, falls below the thresholds, or is absent; the cell's details say which.</dd>
+        <dt><span class="badge state-to_verify">to verify</span></dt>
+        <dd data-i18n="legend.verify">The chromosome label conflicts with available correspondence evidence, or the gene lies inside a region marked for review. The original genomic position is retained. Candidates are shown without a confirmed subgenome assignment and must not be read as established orthologs or homeologs.</dd>
+        <dt>Review basis</dt>
+        <dd data-i18n="legend.review"><em>Gene vote</em>: more than half of the other annotations that have a syntenic counterpart of this gene place it on another chromosome, at least 3 on the same one (a counterpart on another chromosome counts only at ≥99% identity and ≥80% coverage). <em>Region context</em>: the gene lies within a run of gene-vote genes pointing to the same chromosome and is flagged with the run, even when its own vote is missing, thin or for its own chromosome. Downloaded tables call these <code>vote</code> and <code>stretch</code>. Either is a review flag, not proof that a gene moved or that an assembly is wrong.</dd>
       </dl>
+    </details>
+
+    <!-- 四张功能卡片，按查询页的顺序；每张都能直接打开 FAD2 的例子 / four feature cards in the order of the result page;
+         each opens the FAD2 example in its view -->
+    <section class="features" id="about" aria-label="What the database shows">
+      <article class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="4" height="16" rx="2"/><rect x="10" y="2" width="4" height="18" rx="2"/><rect x="17" y="6" width="4" height="14" rx="2"/></svg>
+        <h2>Three subgenome copies</h2>
+        <p>Predicted SG1, SG2 and SG3 copies in every genome. Genes whose position conflicts with the evidence are flagged <em>to verify</em>, never silently reassigned.</p>
+        <a class="feature-link" href="#q=CsPrytzh.01G108100&amp;g=Prytzh&amp;view=homeologs">Example: FAD2 →</a>
+      </article>
+      <article class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6h7M6 8.5v7M18 8.5v7M8.5 18h7"/></svg>
+        <h2>Evidence in every annotation</h2>
+        <p>Ranked protein hits, GENESPACE synteny and OrthoFinder orthology for each annotation, with the evidence and alignment metrics behind every pair.</p>
+        <a class="feature-link" href="#q=CsPrytzh.01G108100&amp;g=Prytzh&amp;view=evidence&amp;list=hits">Example: FAD2 →</a>
+      </article>
+      <article class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4.5A1.5 1.5 0 0 1 4.5 3H12l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.6"/></svg>
+        <h2>Functional annotation</h2>
+        <p>Each transcript's results from six tools (TAIR10, Swiss-Prot and RefSeq hits, eggNOG-mapper, KofamScan, InterProScan), plus GO and KEGG tables for enrichment.</p>
+        <a class="feature-link" href="#q=CsPrytzh.01G108100&amp;g=Prytzh">Example: FAD2 →</a>
+      </article>
+      <article class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18M3 12h12M3 17h16"/><path d="M18 10.5l3 1.5-3 1.5"/></svg>
+        <h2>Sequences and alignment</h2>
+        <p>Protein and CDS of every annotated transcript, aligned in your browser with Kalign, with FASTA and table downloads.</p>
+        <a class="feature-link" href="#q=CsPrytzh.01G108100&amp;g=Prytzh&amp;view=alignment">Example: FAD2 →</a>
+      </article>
     </section>
 
-    <section class="downloads" id="downloads" hidden>
-      <h2>Downloads</h2>
-      <ul id="download-list"></ul>
+    <!-- 数据版本条：下载卡片都在"数据"弹窗里，这里是入口 / the data-release band: the download tiles live in the Data
+         panel; this is its entry, with the sources table, the methods and the dataset -->
+    <!-- 一条：下载按钮 + 一句话说明（版本和提交号由 app.js 填）。来源表、方法和数据集在顶栏和首页数字里都有入口，这里不重复
+         One strip: the Downloads button and one sentence (release and commit filled by app.js). The sources table,
+         the methods and the dataset are reachable from the top bar and the start-page figures, so they are not repeated here. -->
+    <section class="data-band" id="downloads" hidden>
+      <button type="button" id="downloads-open" class="button-primary">Downloads</button>
+      <p class="data-band-text muted">Every view and download on this page reads one fixed release of the public Hugging Face dataset:<span id="data-band-release" class="nowrap"></span></p>
     </section>
   </main>
 
@@ -111,11 +297,15 @@
   </footer>
 
   <!-- Bump the asset tag together whenever page scripts or styles change. -->
-  <script src="config.js?v=20261029-reference-alignment-1"></script>
-  <script src="assets/browser-alignment.js?v=20261029-reference-alignment-1"></script>
-  <script src="assets/codon-alignment.js?v=20261029-reference-alignment-1"></script>
-  <script src="assets/protein-alignment-view.js?v=20261029-reference-alignment-1"></script>
-  <script src="assets/alignment-selection.js?v=20261029-reference-alignment-1"></script>
-  <script src="assets/app.js?v=20261029-reference-alignment-1"></script>
+  <script src="config.js?v=20261105-ui-40"></script>
+  <script src="assets/browser-alignment.js?v=20261105-ui-40"></script>
+  <script src="assets/codon-alignment.js?v=20261105-ui-40"></script>
+  <script src="assets/protein-alignment-view.js?v=20261105-ui-40"></script>
+  <script src="assets/alignment-selection.js?v=20261105-ui-40"></script>
+  <script src="assets/alignment-candidates.js?v=20261105-ui-40"></script>
+  <script src="assets/transcript-sequences.js?v=20261105-ui-40"></script>
+  <script src="assets/gene-description.js?v=20261105-ui-40"></script>
+  <script src="assets/functional-annotation.js?v=20261105-ui-40"></script>
+  <script src="assets/app.js?v=20261105-ui-40"></script>
 </body>
 </html>

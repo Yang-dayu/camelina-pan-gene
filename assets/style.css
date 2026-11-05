@@ -1,14 +1,23 @@
-/* Camelina pan-gene lookup. Colours are tokens so light and dark themes share one set of rules. */
+/* Camelina pan-gene lookup. Colours are tokens so light and dark themes share one set of rules.
+   配色都是变量，亮色和暗色共用同一套规则；三个亚基因组各有一个颜色（--sg1/2/3）。 */
 :root {
-  --bg: #f7f8f6;
+  --bg: #f4f6f1;
   --surface: #ffffff;
-  --surface-2: #f0f3ef;
-  --text: #1d2420;
-  --muted: #5f6b64;
-  --line: #dde3dd;
-  --accent: #2f6b4f;
+  --surface-2: #eef2ec;
+  --surface-3: #e3eae2;
+  --text: #13201a;
+  --muted: #5a6960;
+  --line: #dde4dc;
+  --accent: #1d6b48;
+  --accent-strong: #145236;
   --accent-text: #ffffff;
-  --link: #22603f;
+  --link: #1b6442;
+  --gold: #b9821a;
+  --sg1: #33a48d; --sg2: #d7a536; --sg3: #d06b5d;
+  --hero-from: #0b3023; --hero-mid: #114c37; --hero-to: #1a6649;
+  --hero-text: #f1f7f2; --hero-muted: rgba(234, 245, 237, 0.76); --hero-gold: #ecc865;
+  --shadow-sm: 0 1px 2px rgba(19, 32, 26, 0.06);
+  --shadow: 0 1px 2px rgba(19, 32, 26, 0.05), 0 12px 32px -14px rgba(19, 32, 26, 0.20);
   --syn: #2f6b4f;      --syn-bg: #e2f0e7;
   --anchor: #1d4f37;   --anchor-bg: #c8e6d3;
   --of: #6a4c93;       --of-bg: #ece5f5;
@@ -17,12 +26,16 @@
   --beyond-bg: #fff6dc;
   --bar: #9cc9ae;
   --radius: 10px;
+  --radius-lg: 16px;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121614; --surface: #1a201d; --surface-2: #222a26; --text: #e4ebe6; --muted: #9aa8a0;
-    --line: #2f3833; --accent: #6fbf94; --accent-text: #0c1a12; --link: #8fd3ad;
+    --bg: #0b110f; --surface: #121a17; --surface-2: #19231f; --surface-3: #212e29; --text: #e5ede8; --muted: #9aa9a1;
+    --line: #25332d; --accent: #6fcf9c; --accent-strong: #8fdcb3; --accent-text: #07160e; --link: #8fdcb3; --gold: #e2b84a;
+    --hero-from: #07120e; --hero-mid: #0c271d; --hero-to: #113629;
+    --shadow-sm: none; --shadow: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 14px 34px -18px rgba(0, 0, 0, 0.7);
     --syn: #8fd3ad; --syn-bg: #1f3a2b; --anchor: #c3f0d6; --anchor-bg: #2a5a40;
     --of: #c9b1ee; --of-bg: #33294a; --pg: #f0c983; --pg-bg: #4a3a1c;
     --partial: #f3a596; --partial-bg: #4d2620; --beyond-bg: #3d3519; --bar: #3f7a59;
@@ -30,8 +43,10 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #121614; --surface: #1a201d; --surface-2: #222a26; --text: #e4ebe6; --muted: #9aa8a0;
-  --line: #2f3833; --accent: #6fbf94; --accent-text: #0c1a12; --link: #8fd3ad;
+  --bg: #0b110f; --surface: #121a17; --surface-2: #19231f; --surface-3: #212e29; --text: #e5ede8; --muted: #9aa9a1;
+  --line: #25332d; --accent: #6fcf9c; --accent-strong: #8fdcb3; --accent-text: #07160e; --link: #8fdcb3; --gold: #e2b84a;
+  --hero-from: #07120e; --hero-mid: #0c271d; --hero-to: #113629;
+  --shadow-sm: none; --shadow: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 14px 34px -18px rgba(0, 0, 0, 0.7);
   --syn: #8fd3ad; --syn-bg: #1f3a2b; --anchor: #c3f0d6; --anchor-bg: #2a5a40;
   --of: #c9b1ee; --of-bg: #33294a; --pg: #f0c983; --pg-bg: #4a3a1c;
   --partial: #f3a596; --partial-bg: #4d2620; --beyond-bg: #3d3519; --bar: #3f7a59;
@@ -40,54 +55,385 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+html { scroll-padding-top: 76px; }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.55 "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   overflow-wrap: anywhere;
+  -webkit-font-smoothing: antialiased;
 }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+/* 中文界面：翻译完成前不显示；字体加上常见的中文字体；大写字母间距对汉字太宽
+   Chinese interface: hidden until translated; common Chinese fonts; the capital-letter spacing is too wide for Chinese */
+.i18n-pending body { visibility: hidden; }
+html:lang(zh) body { font-family: "Inter", "Segoe UI Variable Text", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", system-ui, sans-serif; }
+html:lang(zh) .eyebrow, html:lang(zh) .examples-label, html:lang(zh) .karyo-labels text { letter-spacing: 0.06em; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
 a { color: var(--link); }
 .muted { color: var(--muted); }
 .small { font-size: 12.5px; }
-code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.95em; }
+code { font-family: var(--mono); font-size: 0.95em; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.skip-link { position: absolute; left: 12px; top: -48px; z-index: 100; padding: 8px 14px; border-radius: 8px; background: var(--surface); color: var(--text); }
+.skip-link:focus { top: 10px; }
+main:focus { outline: none; }
 
-/* Header and search */
-.site-header { background: var(--surface); border-bottom: 1px solid var(--line); padding: 28px 0 18px; }
-h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
-.subtitle { margin: 4px 0 16px; color: var(--muted); }
-.search { display: flex; gap: 8px; flex-wrap: wrap; }
-.search input { flex: 1 1 320px; min-width: 0; }
+/* Top bar: brand, page links, theme switch / 顶栏 */
+.topbar {
+  position: sticky; top: 0; z-index: 50; color: var(--hero-text);
+  background: var(--hero-from);
+  background: color-mix(in srgb, var(--hero-from) 90%, transparent);
+  -webkit-backdrop-filter: saturate(150%) blur(12px); backdrop-filter: saturate(150%) blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px; }
+.brand { display: inline-flex; align-items: center; gap: 11px; color: var(--hero-text); text-decoration: none; font-size: 15.5px; letter-spacing: 0.005em; white-space: nowrap; }
+.brand strong { font-weight: 700; }
+.brand-mark { width: 30px; height: 30px; flex: none; }
+.brand-ring { fill: rgba(255, 255, 255, 0.07); stroke: rgba(255, 255, 255, 0.32); stroke-width: 1; }
+.brand-leaf { fill: #7fd1a6; }
+.brand-sg1 { fill: var(--sg1); } .brand-sg2 { fill: var(--sg2); } .brand-sg3 { fill: var(--sg3); }
+.topnav { display: flex; align-items: center; gap: 2px; }
+.topnav-links { display: flex; align-items: center; gap: 2px; }
+/* 语言菜单：地球图标按钮下面挂一个小下拉，列出 English / 中文，当前的打勾
+   Language menu: a small drop-down under the globe button lists English / 中文, with the current one ticked */
+.lang-menu { position: relative; display: inline-flex; }
+.lang-list {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 5; min-width: 148px; padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--hero-from); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px;
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.65);
+}
+.lang-list[hidden] { display: none; }
+.lang-option {
+  display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; gap: 8px;
+  padding: 8px 12px 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--hero-muted);
+  font: inherit; font-size: 14px; text-align: left; cursor: pointer; white-space: nowrap;
+}
+.lang-option::before { content: ""; }   /* 占住勾的位置，两项对齐 / keeps the tick's slot, so both entries align */
+.lang-option[aria-checked="true"] { color: var(--hero-text); }
+.lang-option[aria-checked="true"]::before { content: "✓"; font-size: 13px; line-height: 1; }
+.lang-option:hover, .lang-option:focus-visible { color: var(--hero-text); background: rgba(255, 255, 255, 0.1); }
+/* 两个类名，盖过后面 .icon-button 的 display / two classes, so it beats the later .icon-button display */
+.icon-button.menu-button { display: none; }
+.nav-link {
+  color: var(--hero-muted); text-decoration: none; padding: 7px 12px; border-radius: 8px;
+  border: 0; background: none; font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap;
+}
+.nav-link:hover { color: var(--hero-text); background: rgba(255, 255, 255, 0.08); }
+.icon-button {
+  display: inline-grid; place-items: center; width: 36px; height: 36px; margin-left: 6px; padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 10px; background: rgba(255, 255, 255, 0.04);
+  color: var(--hero-text); cursor: pointer;
+}
+.icon-button:hover { background: rgba(255, 255, 255, 0.12); }
+.icon-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.icon-button .icon-moon { fill: currentColor; stroke: none; }
+.icon-sun { display: none; }
+:root[data-theme="dark"] .icon-sun { display: block; }
+:root[data-theme="dark"] .icon-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .icon-sun { display: block; }
+  :root:not([data-theme="light"]) .icon-moon { display: none; }
+}
+
+/* Hero: title, search, examples, figures / 首页大标题区 */
+.hero {
+  position: relative; overflow: hidden; color: var(--hero-text); padding: 72px 0 30px;
+  background:
+    radial-gradient(900px 440px at 88% -12%, rgba(215, 165, 54, 0.22), transparent 62%),
+    radial-gradient(720px 400px at -8% 112%, rgba(51, 164, 141, 0.24), transparent 60%),
+    linear-gradient(160deg, var(--hero-from), var(--hero-mid) 55%, var(--hero-to));
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 34px 34px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 20%, transparent 85%); mask-image: linear-gradient(to bottom, #000 20%, transparent 85%);
+}
+.hero-inner { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); gap: 48px; align-items: center; }
+.eyebrow { margin: 0 0 16px; color: var(--hero-gold); font-size: 12px; font-weight: 650; letter-spacing: 0.16em; text-transform: uppercase; }
+.hero h1 { margin: 0; font-size: clamp(32px, 4.8vw, 54px); line-height: 1.06; letter-spacing: -0.028em; font-weight: 760; }
+.hero h1 em { font-style: italic; font-weight: 700; }
+.hero h1 .keep-together { white-space: nowrap; }   /* 中文标题"泛基因查询"不从中间断开 / the Chinese title does not break inside this phrase */
+.subtitle { margin: 18px 0 30px; max-width: 48ch; color: var(--hero-muted); font-size: 17.5px; line-height: 1.55; }
+.search {
+  position: relative; display: flex; align-items: stretch; max-width: 740px; padding: 6px;
+  background: var(--surface); border-radius: 16px;
+  box-shadow: 0 22px 46px -20px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: box-shadow 0.15s;
+}
+.search:focus-within { box-shadow: 0 22px 46px -20px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(127, 209, 166, 0.55); }
+.search-icon { position: absolute; left: 20px; top: 50%; width: 20px; height: 20px; transform: translateY(-50%); fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
 input, select, button { font: inherit; }
 input, select {
   padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--surface); color: var(--text);
 }
-input:disabled, select:disabled, button:disabled { opacity: 0.55; cursor: default; }
+.search input { flex: 1 1 auto; min-width: 0; padding: 14px 14px 14px 48px; border: 0; background: transparent; font-size: 16px; outline: none; }
+.search select { flex: 0 1 auto; max-width: 200px; padding: 0 14px; border: 0; border-left: 1px solid var(--line); border-radius: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .search button {
-  padding: 9px 18px; border: 0; border-radius: var(--radius); background: var(--accent); color: var(--accent-text);
-  font-weight: 600; cursor: pointer;
+  flex: none; padding: 0 26px; border: 0; border-radius: 11px; cursor: pointer;
+  background: linear-gradient(180deg, #24845d, #1a6646); color: #fff; font-weight: 650; font-size: 15px; letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
+.search button:hover:not(:disabled) { background: linear-gradient(180deg, #2a9367, #1d6f4c); }
+input:disabled, select:disabled, button:disabled { opacity: 0.55; cursor: default; }
 button.secondary {
-  padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer;
+  padding: 7px 13px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer;
 }
-.examples { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
-#examples { display: flex; flex: 1 1 320px; min-width: 0; flex-wrap: wrap; gap: 4px 12px; }
-.example { max-width: 100%; overflow-wrap: anywhere; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+button.secondary:hover { border-color: var(--accent); }
+.examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 18px 0 0; color: var(--hero-muted); font-size: 13px; }
+.examples-label { font-size: 11px; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; }
+#examples { display: contents; }
+.examples-all { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.example {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 4px 12px 4px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 999px; background: rgba(255, 255, 255, 0.07);
+  color: var(--hero-text); text-decoration: none; font-size: 12.5px; transition: background 0.15s, border-color 0.15s;
+}
+.example:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); }
+.example-genome { padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.14); font-size: 11.5px; font-weight: 650; }
+.example code { font-size: 12px; overflow-wrap: anywhere; }
+.more-examples { flex: 1 0 100%; }
+.more-examples summary { width: fit-content; color: var(--hero-muted); cursor: pointer; list-style: none; font-size: 12.5px; }
+.more-examples summary::-webkit-details-marker { display: none; }
+.more-examples summary::after { content: " ▾"; }
+.more-examples[open] summary::after { content: " ▴"; }
+.more-examples summary:hover { color: var(--hero-text); }
+.examples-all { margin-top: 10px; }
+.hero-art { margin: 0; justify-self: end; width: 100%; max-width: 390px; }
+.hero-art svg { display: block; width: 100%; height: auto; overflow: visible; }
+.karyo rect { stroke: rgba(255, 255, 255, 0.28); stroke-width: 0.8; transform-box: fill-box; transform-origin: bottom; animation: karyo-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.karyo.sg1 rect { fill: var(--sg1); } .karyo.sg2 rect { fill: var(--sg2); } .karyo.sg3 rect { fill: var(--sg3); }
+.karyo.sg2 rect { animation-delay: 0.12s; } .karyo.sg3 rect { animation-delay: 0.24s; }
+.karyo rect.karyo-linked { stroke: rgba(255, 255, 255, 0.75); stroke-width: 1.2; }
+@keyframes karyo-fade { from { opacity: 0; } to { opacity: 1; } }
+/* 每条染色体下的编号（ChrNN 的 NN）/ the chromosome number under each bar (the NN of ChrNN) */
+.karyo-numbers text { fill: var(--hero-muted); font-size: 8.5px; font-weight: 600; text-anchor: middle; font-variant-numeric: tabular-nums; animation: karyo-fade 0.9s 0.45s both; }
+.karyo-labels text { fill: var(--hero-muted); font-size: 12px; font-weight: 650; letter-spacing: 0.14em; text-anchor: middle; }
+.karyo-link { fill: none; stroke: rgba(255, 255, 255, 0.38); stroke-width: 1.2; stroke-dasharray: 3 4; animation: karyo-fade 0.9s 0.6s both; }
+.hero-art figcaption { margin: 10px 0 0; color: var(--hero-muted); font-size: 12px; line-height: 1.5; text-align: center; }
+/* 图下的七个部分同源组对照表 / the seven homeolog groups under the figure */
+.karyo-groups { margin-top: 12px; color: var(--hero-muted); font-size: 12px; }
+.karyo-groups summary { width: fit-content; margin: 0 auto; color: var(--hero-text); font-weight: 650; cursor: pointer; list-style: none; }
+.karyo-groups summary::-webkit-details-marker { display: none; }
+.karyo-groups summary::after { content: " ▾"; }
+.karyo-groups details[open] summary::after { content: " ▴"; }
+.karyo-group-table { width: 100%; margin-top: 8px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+/* 全站的 th 有浅色底（亮色模式下近乎白色），放在深色首页区里要去掉 / the site-wide th has a light background (near white
+   in light mode); in the dark hero it must be cleared */
+.karyo-group-table th, .karyo-group-table td { padding: 3px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; white-space: nowrap; background: transparent; letter-spacing: normal; font-size: inherit; }
+.karyo-group-table thead th { color: var(--hero-text); font-weight: 650; }
+.karyo-group-table tbody th { color: var(--hero-gold); font-weight: 650; }
+.karyo-group-table tr.is-linked td, .karyo-group-table tr.is-linked th { background: rgba(255, 255, 255, 0.06); color: var(--hero-text); }
+.karyo-group-table sup { margin-left: 1px; font-size: 0.85em; }
+/* 可点的组：整行可点，行首是按钮 / clickable groups: the whole row, with a button in its header */
+.karyo-group-table tbody tr { cursor: pointer; }
+.karyo-group-table tbody tr:hover td, .karyo-group-table tbody tr:hover th { background: rgba(255, 255, 255, 0.04); }
+.karyo-group-table tbody tr.is-linked:hover td, .karyo-group-table tbody tr.is-linked:hover th { background: rgba(255, 255, 255, 0.08); }
+.group-pick { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 650; cursor: pointer; }
+.group-pick:focus-visible { outline: 2px solid var(--hero-gold); outline-offset: 2px; border-radius: 3px; }
+/* 选中一个组时：其余染色体变淡，选中的亮起，复合染色体加虚线框（只有一段属于这个组）
+   With a group chosen: other bars fade, the chosen ones light up, a composite one gets a dashed outline (only one
+   segment belongs to the group). fill-opacity, because the rise animation holds opacity. */
+#karyo-figure rect[data-chr] { cursor: pointer; transition: fill-opacity 0.25s, stroke 0.25s; }
+#karyo-figure .karyo-link.is-quick { animation: karyo-fade 0.35s both; }
+#karyo-figure.has-selection rect[data-chr]:not(.karyo-linked) { fill-opacity: 0.3; }
+#karyo-figure .karyo rect.karyo-partial { stroke-dasharray: 3 2; }
+#karyo-figure.has-selection .karyo-numbers text { transition: fill-opacity 0.25s; }
+#karyo-figure.has-selection .karyo-numbers text:not(.karyo-linked) { fill-opacity: 0.5; }
+#karyo-figure.has-selection .karyo-numbers text.karyo-linked { fill: var(--hero-text); font-weight: 750; }
+/* 表下的两行注释要安静：更小，链接的下划线淡一些 / the two notes under the table stay quiet: smaller, with faint underlines */
+.karyo-groups p { margin: 6px 0 0; font-size: 11.5px; line-height: 1.45; opacity: 0.85; }
+.karyo-groups a { color: inherit; text-decoration-color: rgba(255, 255, 255, 0.35); }
+.karyo-groups a:hover { text-decoration-color: currentColor; }
+@keyframes karyo-rise { from { transform: scaleY(0.2); opacity: 0; } to { transform: scaleY(1); opacity: 0.92; } }
+.stats {
+  position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 52px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; overflow: hidden; background: rgba(255, 255, 255, 0.1);
+}
+.stats:empty { display: none; }
+.stat { display: flex; flex-direction: column; gap: 2px; padding: 16px 22px; background: rgba(6, 24, 17, 0.42); text-align: left; }
+.stat-value { color: #fff; font-size: 27px; font-weight: 720; letter-spacing: -0.02em; }
+.stat-label { color: var(--hero-muted); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+/* 可点开的那一格 / the figure that opens a breakdown */
+.stat-toggle { border: 0; border-radius: 0; color: inherit; font: inherit; cursor: pointer; transition: background 0.15s; }
+.stat-toggle:hover { background: rgba(127, 209, 166, 0.10); }
+.stat-toggle[aria-expanded="true"] { background: rgba(127, 209, 166, 0.14); }
+.stat-toggle:focus-visible { outline: 2px solid #7fd1a6; outline-offset: -2px; }
+.stat-chevron { display: inline-block; margin-left: 6px; letter-spacing: 0; transition: transform 0.15s; }
+.stat-toggle[aria-expanded="true"] .stat-chevron { transform: rotate(180deg); }
+/* 数字下面的明细面板（基因数、蛋白共享分布）/ the breakdown panels under the figures (genes, protein sharing) */
+.stat-panel {
+  position: relative; z-index: 1; margin-top: 12px; padding: 18px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; background: rgba(6, 24, 17, 0.5); color: var(--hero-text);
+}
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-bottom: 12px; font-size: 14px; }
+.panel-head span { color: var(--hero-muted); }
+.panel-note { margin: 14px 0 0; color: var(--hero-muted); font-size: 12.5px; }
+.genome-size-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 32px; margin: 0; padding: 0; list-style: none; }
+.genome-size-list li { display: grid; grid-template-columns: 150px minmax(0, 1fr) 70px; align-items: center; gap: 12px; font-size: 13px; }
+.genome-size-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.genome-size-bar { height: 8px; overflow: hidden; border-radius: 4px; background: rgba(255, 255, 255, 0.08); }
+.genome-size-bar i { display: block; height: 100%; border-radius: 4px; background: #3ea576; }
+.genome-size-value { text-align: right; font-variant-numeric: tabular-nums; }
+/* 基因家族分布：一个颜色的柱子，列数由数据定 / gene-family sharing: one-colour columns, their count set by the data.
+   #3ea576 passed the dataviz validator (lightness band, contrast) on both hero panel surfaces. */
+.sharing-chart { display: grid; grid-template-columns: 36px minmax(0, 1fr); column-gap: 8px; }
+.sharing-axis {
+  display: flex; flex-direction: column; justify-content: space-between; height: 190px; padding-top: 30px;
+  color: var(--hero-muted); font-size: 11px; text-align: right; font-variant-numeric: tabular-nums;
+}
+.sharing-axis span { line-height: 1; transform: translateY(-50%); }
+.sharing-axis span:last-child { transform: translateY(0); }
+.sharing-plot {
+  position: relative; display: grid; column-gap: 2px; align-items: end;   /* columns: set inline */
+  height: 190px; padding-top: 30px;
+}
+.sharing-grid { position: absolute; inset: 30px 0 0 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+.sharing-grid i { display: block; height: 1px; background: rgba(255, 255, 255, 0.1); }
+.sharing-col { position: relative; display: flex; align-items: flex-end; justify-content: center; height: 100%; outline: none; cursor: default; }
+.sharing-col:hover .sharing-bar, .sharing-col:focus-visible .sharing-bar { background: #57c08f; }
+.sharing-col:focus-visible { box-shadow: inset 0 0 0 2px rgba(127, 209, 166, 0.6); border-radius: 4px; }
+.sharing-bar { position: relative; width: min(24px, 72%); min-height: 2px; border-radius: 4px 4px 0 0; background: #3ea576; }
+.bar-label {
+  position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+  color: var(--hero-text); font-size: 11.5px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.sharing-xticks {
+  grid-column: 2; display: grid; column-gap: 2px; margin-top: 6px;
+  color: var(--hero-muted); font-size: 11px; text-align: center; font-variant-numeric: tabular-nums;
+}
+.sharing-xlabel { margin: 4px 0 0 44px; color: var(--hero-muted); font-size: 12px; text-align: center; }
+.sharing-tip {
+  position: absolute; top: 0; z-index: 2; transform: translateX(-50%); padding: 6px 10px; border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18); background: #08190f; color: var(--hero-text);
+  width: max-content; max-width: 100%;   /* wraps instead of leaving the plot on narrow screens */
+  font-size: 12px; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.sharing-table { margin-top: 12px; font-size: 13px; }
+.sharing-table summary { width: fit-content; color: var(--hero-muted); cursor: pointer; }
+.sharing-table summary:hover { color: var(--hero-text); }
+.sharing-table table { width: auto; min-width: 280px; margin-top: 8px; color: var(--hero-text); }
+.sharing-table th, .sharing-table td { padding: 4px 14px 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: transparent; }
+.sharing-table th { color: var(--hero-muted); }
+/* 注释与来源表：深色面板上的表格，按品种分组；窄屏变成卡片
+   The annotations-and-sources table on the dark panel, grouped by accession; cards on narrow screens */
+.ann-table-wrap { overflow-x: auto; }
+.ann-table { min-width: 880px; color: var(--hero-text); font-size: 13px; }
+.ann-table th, .ann-table td {
+  padding: 9px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: transparent; color: inherit;
+}
+.ann-table [hidden] { display: none !important; }
+.ann-table thead th {
+  padding-top: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.18); color: var(--hero-muted); font-size: 12px;
+  font-weight: 600; letter-spacing: 0.01em; white-space: normal; vertical-align: bottom;
+}
+.ann-table thead th.num { text-align: right; }
+.ann-table thead .nowrap { white-space: nowrap; }
+.ann-table thead th.ann-busco-head { padding-bottom: 4px; border-bottom-color: rgba(255, 255, 255, 0.1); text-align: center; }
+.ann-table tbody.ann-group { border-top: 1px solid rgba(255, 255, 255, 0.16); }
+.ann-table tbody.ann-group:first-of-type { border-top: 0; }
+.ann-table tbody tr:last-child td, .ann-table tbody tr:last-child th { border-bottom: 0; }
+.ann-table tr.ann-row:hover > * { background: rgba(255, 255, 255, 0.03); }
+.ann-accession { font-weight: 650; white-space: nowrap; }
+.ann-accession small { display: block; margin-top: 1px; color: var(--hero-muted); font-size: 11.5px; font-weight: 400; }
+.ann-table th.ann-cell { min-width: 280px; font-size: 13px; font-weight: 400; letter-spacing: 0; white-space: normal; }
+.ann-name { font-weight: 650; }
+.ann-source { margin-top: 2px; color: var(--hero-muted); font-size: 12px; }
+.ann-source a { color: #9fdcbc; }
+.ann-sep { margin: 0 6px; opacity: 0.6; }
+.ann-pending { color: var(--hero-gold); font-style: italic; }
+.ann-version { margin-top: 2px; color: var(--hero-muted); font-family: var(--mono); font-size: 11px; overflow-wrap: break-word; }
+.ann-todo { margin: 10px 0 0; color: var(--hero-gold); font-size: 12.5px; font-style: italic; }
+.ann-version .nowrap { white-space: nowrap; }
+.ann-build { margin-top: 2px; color: var(--hero-muted); font-size: 12px; }
+.ann-table td.num { white-space: nowrap; }
+.ann-table td.num small { display: block; margin-top: 1px; color: var(--hero-muted); font-size: 11.5px; }
+.ann-busco { font-weight: 650; }
+.ann-toggle-cell { text-align: right; }
+.ann-toggle {
+  padding: 3px 10px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; background: transparent;
+  color: var(--hero-muted); font: inherit; font-size: 12px; cursor: pointer;
+}
+.ann-toggle:hover, .ann-toggle[aria-expanded="true"] { border-color: rgba(127, 209, 166, 0.6); background: rgba(127, 209, 166, 0.12); color: var(--hero-text); }
+.ann-toggle:focus-visible { outline: 2px solid #7fd1a6; outline-offset: 2px; }
+.ann-table tr.ann-detail > td { padding-top: 0; }
+.ann-detail-list {
+  display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 18px; margin: 0; padding: 10px 14px;
+  border-radius: 10px; background: rgba(255, 255, 255, 0.045); font-size: 12.5px; white-space: normal;
+}
+.ann-detail-list dt { color: var(--hero-muted); }
+.ann-detail-list dd { margin: 0; font-variant-numeric: tabular-nums; }
+.ann-definitions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; margin: 18px 0 0; font-size: 12.5px; }
+.ann-definitions dt { font-weight: 650; }
+.ann-definitions dd { margin: 2px 0 0; color: var(--hero-muted); }
+.annotation-sources .panel-note a { color: #9fdcbc; }
+@media (max-width: 760px) {
+  .ann-table { min-width: 0; }
+  .ann-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .ann-table, .ann-table tbody, .ann-table tr, .ann-table td, .ann-table th { display: block; }
+  .ann-table tbody.ann-group { padding: 6px 0; }
+  .ann-table tbody.is-multi { padding-left: 12px; border-left: 2px solid rgba(127, 209, 166, 0.4); }
+  .ann-table tr.ann-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; padding: 10px 0; }
+  .ann-table tr.ann-row > * { padding: 0; border: 0; }
+  .ann-table tr.ann-row:hover > * { background: transparent; }
+  .ann-accession { grid-column: 1 / -1; color: var(--hero-gold); }
+  .ann-accession small { display: inline; margin-left: 6px; }
+  .ann-accession.is-continued, .ann-accession.is-single { display: none; }
+  .ann-table th.ann-cell { grid-column: 1 / -1; min-width: 0; }
+  .ann-table td.num { text-align: left; white-space: normal; }
+  .ann-table td[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 1px; color: var(--hero-muted); font-size: 11px;
+    font-weight: 400; white-space: nowrap;
+  }
+  .ann-toggle-cell { grid-column: 1 / -1; text-align: left; }
+  /* 组装那一格排在注释指标后面，BUSCO C 和 M 留在同一行 / The assembly figure follows the annotation figures, so BUSCO C and M share a row */
+  .ann-table td.ann-n50 { order: 1; }
+  .ann-table .ann-toggle-cell { order: 2; }
+  .ann-table tr.ann-detail > td { padding: 0 0 10px; border: 0; }
+  .ann-table tr.ann-detail > td.ann-accession { display: none; }
+  .ann-detail-list, .ann-definitions { grid-template-columns: 1fr; }
+  .ann-detail-list dd { margin-bottom: 4px; }
+}
+.is-query .stat-panel { display: none; }
 
-main { padding: 20px 16px 40px; }
-.message { padding: 10px 14px; border-radius: var(--radius); background: var(--surface-2); margin-bottom: 16px; }
-.message.error { background: var(--partial-bg); color: var(--partial); }
+/* With a query the hero becomes a slim search bar, so the result fills the screen / 有查询时收起大标题区 */
+.is-query .hero { padding: 14px 0; }
+.is-query .hero::after, .is-query .eyebrow, .is-query .hero h1, .is-query .subtitle, .is-query .examples,
+.is-query .hero-art, .is-query .stats, .is-query .features, .is-query .nav-home-only { display: none; }
+.is-query .hero-inner { display: block; }
+.is-query .search { max-width: none; box-shadow: 0 10px 28px -16px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+
+main { padding: 8px 20px 48px; }
+.message { margin: 20px 0 0; padding: 12px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.message.error { border-color: transparent; background: var(--partial-bg); color: var(--partial); }
 .choice { margin-right: 12px; }
 
+/* Start page: what the lookup shows / 首页的三张功能卡片 */
+/* 四张功能卡片，宽屏一行四张；每张底部是例子的链接 / four feature cards, one row on wide screens; each ends with an example link */
+.features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 40px 0 0; }
+.feature { display: flex; flex-direction: column; padding: 22px 22px 20px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow); }
+.feature-link { margin-top: 14px; color: var(--link); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.feature-link:hover { text-decoration: underline; }
+.feature svg { width: 42px; height: 42px; padding: 9px; border-radius: 12px; background: var(--syn-bg); fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.feature h2 { margin: 14px 0 6px; font-size: 17px; letter-spacing: -0.01em; }
+.feature p { flex: 1; margin: 0; color: var(--muted); font-size: 14.5px; }
+
 /* The query gene */
-.gene-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.gene-card {
+  position: relative; overflow: hidden; margin-top: 24px; padding: 22px 24px 18px;
+  border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow);
+}
+.gene-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--sg1), var(--sg2), var(--sg3)); }
 .gene-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.gene-title h2 { margin: 0; min-width: 0; font-size: 22px; overflow-wrap: anywhere; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.gene-title h2 { margin: 0; min-width: 0; font-size: 25px; letter-spacing: -0.01em; overflow-wrap: anywhere; font-family: var(--mono); }
 .note { margin: 6px 0 0; color: var(--muted); overflow-wrap: anywhere; }
-.facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 12px 0 0; }
+.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 14px 0 0; }
 .facts dt { color: var(--muted); }
 .facts dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .gene-groups summary, .group-technical summary { color: var(--link); cursor: pointer; width: fit-content; }
@@ -95,7 +441,7 @@ main { padding: 20px 16px 40px; }
 .group-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 .entry-button {
   display: flex; flex-direction: column; align-items: flex-start; gap: 3px; max-width: 100%;
-  border: 1px solid var(--line); color: var(--text); background: var(--surface-2); border-radius: 8px;
+  border: 1px solid var(--line); color: var(--text); background: var(--surface-2); border-radius: 10px;
   padding: 9px 12px; cursor: pointer; text-align: left;
 }
 .entry-button span { color: var(--muted); font-size: 12px; }
@@ -105,55 +451,176 @@ main { padding: 20px 16px 40px; }
 .group-technical { margin-top: 16px; }
 .query-member td { background: var(--syn-bg); }
 .query-label { margin-left: 8px; color: var(--syn); background: var(--surface); }
-.pill { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.pill { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
 .status-in_genespace { color: var(--syn); background: var(--syn-bg); }
 .status-unplaced_protein, .status-no_usable_protein { color: var(--pg); background: var(--pg-bg); }
 
+/* On-demand descriptions from matched external proteins. */
+.gene-description { margin-top: 12px; min-width: 0; }
+.gene-description-panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.gene-description-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 12px 16px; cursor: pointer; }
+.gene-description-summary::before { content: "▸"; color: var(--link); }
+.gene-description-panel[open] > .gene-description-summary::before { content: "▾"; }
+.gene-description-title { font-size: 16px; font-weight: 600; }
+.gene-description-status { margin-left: auto; font-size: 12px; }
+.gene-description-content { border-top: 1px solid var(--line); padding: 0 16px 14px; min-width: 0; }
+.gene-description-progress { margin: 12px 0; }
+.gene-description-hit-wrap { margin: 12px 0; }
+.gene-description-hits { min-width: 850px; }
+.gene-description-hits th, .gene-description-hits td { white-space: normal; }
+.gene-description-hits th:first-child { width: 35%; }
+.gene-description-hit { display: block; width: 100%; padding: 3px 0; border: 0; text-align: left; color: var(--link); background: transparent; cursor: pointer; }
+.gene-description-hit code, .gene-description-hit span { display: block; overflow-wrap: anywhere; }
+.gene-description-hit code { font-size: 12px; font-weight: 600; }
+.gene-description-hit span { color: var(--text); font-size: 12.5px; margin-top: 3px; }
+.gene-description-hit:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.gene-description-selected td { background: var(--syn-bg); }
+.gene-description-entry { padding-top: 2px; }
+.gene-description-entry-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px; }
+.gene-description-entry-heading h3 { margin: 0; font-size: 15px; flex: 1 1 300px; }
+.gene-description-entry-heading a { font-size: 12px; }
+.gene-description-facts, .gene-description-source dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 14px; margin: 8px 0; font-size: 12.5px; }
+.gene-description-facts dt, .gene-description-source dt { color: var(--muted); }
+.gene-description-facts dd, .gene-description-source dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.gene-description-function { margin: 10px 0; font-size: 13px; }
+.gene-description-function-title { margin: 12px 0 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.gene-description-uncertain { margin: 8px 0; padding: 8px 10px; border-left: 3px solid var(--line); background: var(--surface-2); font-size: 13px; }
+.gene-description-evidence-label { display: block; margin-top: 3px; font-size: 11px; }
+.gene-description-links { font-size: 12.5px; }
+.gene-description-links th, .gene-description-links td { white-space: normal; }
+.gene-description-links th { width: 85px; }
+.gene-description-links ul { margin: 0; padding-left: 18px; }
+.gene-description-links li + li { margin-top: 3px; }
+.gene-description-scope { margin: 10px 0; }
+.gene-description-source { margin-top: 10px; }
+.gene-description-source summary { color: var(--link); cursor: pointer; font-size: 12.5px; width: fit-content; }
+@media (max-width: 640px) {
+  .gene-description-summary { padding: 10px 12px; gap: 6px 10px; }
+  .gene-description-content { padding: 0 12px 12px; }
+  .gene-description-facts, .gene-description-source dl { grid-template-columns: 1fr; gap: 1px 0; }
+  .gene-description-facts dd, .gene-description-source dd { margin-bottom: 5px; }
+}
+
+/* 功能注释面板：各工具的原始结果，按转录本 / Functional annotation panel: each tool's raw results, per transcript */
+.function-panel { margin-top: 12px; min-width: 0; }
+.function-panel-inner {
+  min-width: 0; padding: 14px 18px 12px;
+  border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.function-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; }
+.function-title { margin: 0; font-size: 16px; font-weight: 600; }
+.function-transcript { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.function-select {
+  max-width: 100%; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); color: var(--text); font: inherit; font-size: 13px;
+}
+.function-tabs { margin-top: 12px; }
+.function-tabs button { padding: 5px 12px; font-size: 13.5px; }
+.function-count { font-variant-numeric: tabular-nums; opacity: 0.75; }
+.function-body { margin-top: 12px; min-width: 0; }
+.function-table { border: 1px solid var(--line); border-radius: var(--radius); }
+.function-table table { font-size: 13px; }
+.function-table td.wrap-cell { white-space: normal; min-width: 180px; max-width: 420px; }
+.function-table td.nowrap { white-space: nowrap; }
+.function-significant td { background: var(--syn-bg); }
+.function-note { margin: 8px 0 0; }
+.function-empty {
+  margin: 4px 0; padding: 10px 12px; border-left: 3px solid var(--line); border-radius: 6px;
+  background: var(--surface-2); font-size: 13.5px;
+}
+.function-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; font-size: 13.5px; }
+.function-facts dt { color: var(--muted); }
+.function-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.function-go { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; }
+.function-go li + li { margin-top: 2px; }
+.function-go-details summary { color: var(--link); cursor: pointer; width: fit-content; }
+.function-tag {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px;
+  background: var(--surface-2); color: var(--muted); font-size: 11px;
+}
+.function-tag.warn { color: var(--partial); background: var(--partial-bg); }
+.function-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.function-about { margin-top: 10px; color: var(--muted); }
+.function-about summary { color: var(--link); cursor: pointer; width: fit-content; }
+.function-about ul { margin: 6px 0 0; padding-left: 18px; }
+/* 结构域图：每个库一条轨道，条块是匹配位置 / domain map: one track per database, bars mark the matches */
+.domain-map {
+  margin: 0 0 12px; padding: 10px 12px 6px;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2);
+}
+.domain-track { display: grid; grid-template-columns: 116px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 18px; }
+.domain-track + .domain-track { margin-top: 4px; }
+.domain-label { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.domain-lane {
+  position: relative; height: 12px; border-radius: 3px;
+  background: linear-gradient(var(--line), var(--line)) center / 100% 2px no-repeat;
+}
+.domain-bar {
+  position: absolute; top: 1px; height: 10px; border-radius: 3px;
+  background: var(--accent); opacity: 0.85; box-shadow: 0 0 0 1px var(--surface-2);
+}
+.domain-bar.neutral { background: var(--muted); opacity: 0.55; }
+.domain-axis { display: flex; justify-content: space-between; margin: 4px 0 0 126px; }
+@media (max-width: 640px) {
+  .function-panel-inner { padding: 12px 12px 10px; }
+  .function-facts { grid-template-columns: 1fr; gap: 1px 0; }
+  .function-facts dd { margin-bottom: 6px; }
+  .domain-track { grid-template-columns: 84px minmax(0, 1fr); gap: 6px; }
+  .domain-axis { margin-left: 90px; }
+  .function-table td.wrap-cell { min-width: 150px; }
+}
+
 /* Controls */
-.controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; margin: 16px 0; }
-.control { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.control-label { font-size: 13px; color: var(--muted); }
-.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; flex-wrap: wrap; }
-.segmented button { border: 0; background: var(--surface); color: var(--text); padding: 6px 12px; cursor: pointer; }
-.segmented button + button { border-left: 1px solid var(--line); }
-.segmented button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+.controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; margin: 20px 0 18px; }
+.control { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.control-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.segmented { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-sm); }
+.segmented button { border: 0; border-radius: 9px; background: transparent; color: var(--muted); padding: 6px 14px; font-weight: 550; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.segmented button:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
+.segmented button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); box-shadow: var(--shadow-sm); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
   border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px;
-  padding: 2px 10px; font-size: 13px; cursor: pointer;
+  padding: 3px 11px; font-size: 13px; cursor: pointer; transition: border-color 0.12s, background 0.12s;
 }
-.chip[aria-pressed="true"] { background: var(--surface-2); color: var(--text); border-color: var(--accent); }
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--syn-bg); color: var(--text); border-color: var(--accent); }
 .control-genomes {
-  display: block; flex: 1 0 100%; min-width: 0; padding: 12px 14px;
-  border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+  display: block; flex: 1 0 100%; min-width: 0; padding: 14px 16px;
+  border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface);
 }
 .genome-selection-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .genome-selection-title, .genome-selection-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.genome-selection-title .control-label { color: var(--text); font-weight: 600; }
+.genome-selection-title .control-label { color: var(--text); }
 .selection-count { color: var(--muted); font-size: 12px; }
 .selection-button {
-  border: 1px solid var(--line); border-radius: 7px; padding: 5px 10px;
+  border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px;
   background: var(--surface-2); color: var(--link); font: inherit; font-size: 13px; cursor: pointer;
 }
 .selection-button:hover:not(:disabled) { background: var(--surface); border-color: var(--accent); }
 .selection-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .selection-button:disabled { color: var(--muted); opacity: 0.5; cursor: default; }
-.link-button { border: 0; background: none; color: var(--link); cursor: pointer; padding: 0 4px; font: inherit; font-size: 13px; text-decoration: underline; }
+.selection-toggle {
+  display: none; margin-left: auto; padding: 5px 14px; border: 1px solid var(--accent); border-radius: 999px;
+  background: transparent; color: var(--link); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.link-button { border: 0; background: none; color: var(--link); cursor: pointer; padding: 0 4px; font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 2px; }
 
 /* One target genome, tables */
-.target { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; }
-.target-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.target { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); margin-bottom: 14px; box-shadow: var(--shadow-sm); overflow: hidden; }
+.target-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .target-header h3 { margin: 0; font-size: 16px; display: flex; gap: 8px; align-items: center; }
 .empty { padding: 10px 16px; margin: 0; }
 .table-wrap { overflow-x: auto; }
+.results > .table-wrap, .results > .overview, .results > table { border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
 table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: top; }
-th { font-weight: 600; color: var(--muted); font-size: 12.5px; background: var(--surface-2); }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; letter-spacing: 0.02em; background: var(--surface-2); }
 tbody tr:last-child td { border-bottom: 0; }
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
 td.small { white-space: normal; min-width: 120px; color: var(--muted); }
 td.loc { color: var(--muted); font-variant-numeric: tabular-nums; }
-.gene-link { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; text-decoration: none; overflow-wrap: anywhere; }
+.gene-link { font-family: var(--mono); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
 .gene-link:hover { text-decoration: underline; }
 .self-row td, .self-row th[scope="row"] { background: var(--surface-2); }
 .outside-row td { background: var(--beyond-bg); }
@@ -166,33 +633,47 @@ td.evidence { white-space: nowrap; }
 
 /* Overview */
 .overview td { white-space: normal; }
-.overview-row { cursor: pointer; }
+.overview-row { cursor: pointer; transition: background 0.1s; }
 .overview-row:hover td { background: var(--surface-2); }
 .overview-row.expanded td { border-bottom: 0; }
-.genome-cell { font-weight: 600; white-space: nowrap; }
+.genome-cell, .overview td.genome-cell { font-weight: 650; white-space: nowrap; }
+.genome-cell .pill { margin-left: 6px; font-weight: 500; }
 .caret { display: inline-block; width: 1em; color: var(--muted); }
-.cov-pair { white-space: nowrap; }
+.cov-pair { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .hints { min-width: 160px; }
-.overview-detail > td { padding: 4px 10px 14px 28px; background: var(--bg); }
+.overview-detail > td { padding: 4px 12px 16px 30px; background: var(--bg); }
 .overview-detail h4 { margin: 10px 0 4px; font-size: 13.5px; color: var(--muted); }
 .overview-detail .table-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 
 /* Evidence badges */
-.badge { display: inline-block; font-size: 11.5px; line-height: 1.6; padding: 0 7px; border-radius: 999px; margin-right: 4px; white-space: nowrap; }
+.badge { display: inline-block; font-size: 11.5px; line-height: 1.65; padding: 0 8px; border-radius: 999px; margin-right: 4px; white-space: nowrap; font-weight: 550; }
 .badge.syn { color: var(--syn); background: var(--syn-bg); }
-.badge.anchor { color: var(--anchor); background: var(--anchor-bg); font-weight: 600; }
+.badge.cross-syn { color: var(--pg); background: var(--pg-bg); }
+.badge.anchor { color: var(--anchor); background: var(--anchor-bg); font-weight: 650; }
 .badge.of { color: var(--of); background: var(--of-bg); }
 .badge.pg { color: var(--pg); background: var(--pg-bg); }
 .badge.partial { color: var(--partial); background: var(--partial-bg); }
 .badge.cap { color: var(--pg); background: var(--pg-bg); }
 .badge.nohit { color: var(--muted); background: var(--surface-2); }
-.badge.beyond { color: var(--pg); background: var(--pg-bg); font-weight: 600; }
+.badge.beyond { color: var(--pg); background: var(--pg-bg); font-weight: 650; }
 .badge.hint { color: var(--muted); background: var(--surface-2); margin-bottom: 2px; }
 .badge.hint-partial, .badge.hint-unplaced, .badge.hint-other { color: var(--partial); background: var(--partial-bg); }
 .badge.hint-best { color: var(--pg); background: var(--pg-bg); }
 
-/* Homeologs view */
-.homeolog-summary { margin: 0 0 10px; }
+/* Homeologs view: the query's own-subgenome column is the answer, so it is highlighted
+   部分同源页：本亚基因组那一栏就是答案，所以高亮 */
+.homeolog-lead { margin: 0 0 6px; font-size: 15px; }
+.homeolog-summary { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
+.homeolog-table th.own-sg { color: var(--accent); background: color-mix(in srgb, var(--syn-bg) 75%, var(--surface-2)); }
+.homeolog-table td.own-col { background: color-mix(in srgb, var(--syn-bg) 45%, var(--surface)); box-shadow: inset 2px 0 0 var(--accent); }
+.homeolog-table tr.self-row td.own-col { background: color-mix(in srgb, var(--syn-bg) 65%, var(--surface-2)); }
+.sg-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; }
+.sg-sg1 { background: var(--sg1); } .sg-sg2 { background: var(--sg2); } .sg-sg3 { background: var(--sg3); }
+.row-note { margin-top: 4px; font-size: 11.5px; font-weight: 400; color: var(--muted); white-space: normal; }
+.row-note .gene-link { font-size: 11.5px; }
+.row-note .link-button { font-size: 11.5px; padding: 0; }
+
+/* Homeolog cells */
 .homeolog-table th[scope="row"] { color: var(--text); background: var(--surface); font-size: 13.5px; }
 .homeolog-table th.own-sg { color: var(--syn); }
 .homeolog-table th small { font-weight: 400; }
@@ -206,18 +687,32 @@ td.evidence { white-space: nowrap; }
 .badge.state-sequence_only { color: var(--muted); background: var(--surface-2); }
 .badge.state-ambiguous { color: var(--pg); background: var(--pg-bg); }
 .badge.state-via_own_homeolog { color: var(--of); background: var(--of-bg); }
+.badge.state-to_verify { color: var(--partial); background: var(--partial-bg); font-weight: 650; }
+
+/* Review states retain original positions and keep candidate lists readable. */
+.position-review {
+  margin: 0 0 14px; padding: 14px 18px; border: 1px solid var(--line);
+  border-left: 4px solid var(--partial); border-radius: var(--radius-lg); background: var(--surface);
+}
+.position-review h3 { margin: 0 0 6px; font-size: 16px; }
+.position-review p { margin: 6px 0; }
+.position-review .details { margin-top: 10px; }
+.review-candidates td { vertical-align: top; white-space: normal; }
+.review-candidates th[scope="row"] { color: var(--text); background: var(--surface); }
+.review-candidates td.loc { min-width: 145px; }
+.review-candidates td.evidence { min-width: 160px; }
+.review-candidates code { overflow-wrap: anywhere; }
 
 /* Protein alignment example: keep long sequences inside their own scroll area. */
 .protein-alignment-action { margin-top: 8px; }
 .protein-alignment-action button { font-size: 12px; }
-.alignment-picker .alignment-selection-intro { margin: 12px 16px; }
-.alignment-selection-actions, .alignment-run-controls {
+.alignment-run-controls {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 0 16px 12px;
 }
 .alignment-run-controls { padding-top: 12px; border-top: 1px solid var(--line); }
 .alignment-run {
-  border: 0; border-radius: 8px; padding: 8px 16px; background: var(--accent);
-  color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer;
+  border: 0; border-radius: 10px; padding: 9px 18px; background: var(--accent);
+  color: var(--accent-text); font: inherit; font-weight: 650; cursor: pointer;
 }
 .alignment-run:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .alignment-picker .table-wrap { max-height: 480px; overflow: auto; }
@@ -229,7 +724,7 @@ td.evidence { white-space: nowrap; }
 .alignment-output { min-width: 0; }
 .alignment-output:not(:empty), .alignment-empty { padding: 16px; }
 .alignment-output:not(:empty) {
-  margin: 16px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+  margin: 16px 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface);
 }
 .alignment-output h3, .alignment-empty h3 { margin: 0 0 10px; font-size: 18px; }
 .alignment-empty p:last-child { margin-bottom: 0; }
@@ -240,7 +735,7 @@ td.evidence { white-space: nowrap; }
 }
 .msa-view-controls { justify-content: space-between; font-size: 13px; }
 .msa-view-controls label { cursor: pointer; }
-.msa-scroll { max-width: 100%; max-height: 62vh; overflow: auto; border: 1px solid var(--line); border-radius: 7px; }
+.msa-scroll { max-width: 100%; max-height: 62vh; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
 .msa-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .msa-table { width: max-content; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 .msa-table th, .msa-table td { padding: 3px 0; vertical-align: middle; }
@@ -253,7 +748,7 @@ td.evidence { white-space: nowrap; }
 .msa-label strong, .msa-label code, .msa-label small { display: block; }
 .msa-label code { font-size: 11px; font-weight: 400; }
 .msa-label small { color: var(--muted); font-size: 11px; font-weight: 400; }
-.msa-track { display: flex; width: max-content; padding: 0 10px; font: 13px/24px ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.msa-track { display: flex; width: max-content; padding: 0 10px; font: 13px/24px var(--mono); }
 .msa-aa { display: inline-block; flex: 0 0 11px; width: 11px; height: 24px; text-align: center; }
 .msa-ruler { padding-top: 5px; padding-bottom: 5px; color: var(--muted); font-size: 10px; }
 .msa-ruler .msa-aa { overflow: visible; text-align: left; }
@@ -268,6 +763,23 @@ td.evidence { white-space: nowrap; }
 .msa-base-T { background: #f8dddd; color: #852c30; }
 .msa-codon-end { border-right: 1px solid var(--line); }
 .msa-modes { margin: 4px 0 12px; }
+.alignment-slot { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 0 12px; }
+.alignment-slot select, .alignment-transcript, .alignment-gene { font: inherit; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); }
+.alignment-transcript { width: 220px; max-width: 100%; font-size: 12px; }
+.alignment-transcript-cell { min-width: 200px; }
+.alignment-transcript-cell .small { margin-top: 4px; }
+.alignment-gene-cell { min-width: 240px; width: 260px; white-space: normal; }
+.alignment-gene { display: block; width: 260px; max-width: 100%; font-size: 12px; }
+.alignment-candidate-tags { display: flex; flex-wrap: wrap; gap: 2px; margin: 5px 0 2px; }
+.alignment-match-cell { margin: 3px 0; font-size: 11.5px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.alignment-match-cell .small { margin-top: 1px; }
+.alignment-query-coverage, .alignment-target-coverage { display: inline-block; white-space: nowrap; }
+.alignment-match-cell .badge { margin-top: 4px; }
+.alignment-candidates td.loc { min-width: 115px; max-width: 170px; white-space: normal; overflow-wrap: anywhere; }
+.alignment-candidates td.evidence { max-width: 160px; white-space: normal; }
+.alignment-missing-reason { max-width: 300px; white-space: normal; }
+.alignment-missing-reason summary { cursor: pointer; }
+.alignment-missing-reason p { margin: 4px 0; }
 .msa-gap, .msa-unknown { background: var(--surface); color: var(--muted); }
 .msa-highlight-differences tbody .msa-track .msa-aa:not(.msa-difference) { background: var(--surface); color: var(--muted); }
 .msa-highlight-differences tbody .msa-track .msa-difference { box-shadow: inset 0 -2px var(--accent); font-weight: bold; }
@@ -283,31 +795,85 @@ td.evidence { white-space: nowrap; }
   .msa-downloads button { flex: 1 1 120px; padding: 6px 8px; font-size: 12px; }
 }
 
-/* Legend, downloads, dialog, footer */
-.legend, .downloads { margin-top: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; }
-.legend h2, .downloads h2 { margin: 0 0 8px; font-size: 16px; }
-.legend dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+/* Legend (folded by default), downloads, dialog, footer / 说明默认折叠 */
+.legend { margin-top: 24px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.legend > summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; padding: 16px 20px; cursor: pointer; list-style: none; }
+.legend > summary::-webkit-details-marker { display: none; }
+.legend > summary::before { content: "▸"; color: var(--accent); transition: transform 0.15s; }
+.legend[open] > summary::before { transform: rotate(90deg); }
+.legend h2 { display: inline; margin: 0; font-size: 16px; }
+.summary-hint { color: var(--muted); font-size: 13px; }
+.legend dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 18px; margin: 0; padding: 4px 20px 20px; }
 .legend dd { margin: 0; color: var(--muted); }
-.downloads ul { margin: 0; padding-left: 20px; }
-.downloads li { margin: 4px 0; }
-.details-dialog {
-  width: min(900px, calc(100vw - 32px)); max-height: 85vh; border: 1px solid var(--line); border-radius: var(--radius);
-  background: var(--surface); color: var(--text); padding: 18px;
+.downloads { margin-top: 44px; }
+/* 页面底部的一条：下载按钮和一句说明 / the strip at the bottom: the Downloads button and one sentence */
+.data-band {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin: 24px 0 8px; padding: 14px 18px;
+  border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface);
 }
-.details-dialog::backdrop { background: rgba(0, 0, 0, 0.35); }
-.details-dialog h2 { margin: 0 0 10px; font-size: 18px; padding-right: 28px; }
+.data-band-text { flex: 1 1 320px; min-width: 0; margin: 0; font-size: 13.5px; line-height: 1.5; }
+.data-band code { font-size: 12.5px; }
+.data-band .nowrap { white-space: nowrap; }
+/* 主入口按钮：和旁边的按钮一样的白底，只用绿色边框和文字稍作突出（实心绿色太突兀）
+   The main entry button: the same surface as its neighbours, set apart only by a green border and text (solid green
+   stood out too much) */
+.button-primary {
+  padding: 7px 13px; border: 1px solid var(--accent); border-radius: var(--radius); cursor: pointer;
+  background: var(--surface); color: var(--accent); font-weight: 650;
+}
+.button-primary:hover { background: var(--syn-bg); }
+.section-head h2 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.015em; }
+.section-head p { margin: 0 0 18px; }
+.download-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.download-tile {
+  display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--surface);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.download-tile:hover { border-color: var(--accent); box-shadow: var(--shadow); transform: translateY(-1px); }
+.download-icon { position: relative; flex: 0 0 38px; height: 38px; border-radius: 10px; background: var(--syn-bg); }
+.download-icon::before {
+  content: ""; position: absolute; inset: 9px; background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h6'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h6'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.download-tile.is-folder .download-icon::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E");
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E");
+}
+.download-body { min-width: 0; }
+.download-path { font-family: var(--mono); font-size: 13.5px; font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+.download-path:hover { text-decoration: underline; }
+.download-label { margin: 4px 0 6px; font-size: 13.5px; }
+.download-kind { color: var(--muted); font-size: 12px; }
+.details-dialog {
+  width: min(900px, calc(100vw - 32px)); max-height: 85vh; border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--surface); color: var(--text); padding: 22px; box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.5);
+}
+.details-dialog::backdrop { background: rgba(4, 14, 10, 0.5); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+.details-dialog h2 { margin: 0 0 12px; font-size: 19px; padding-right: 28px; letter-spacing: -0.01em; }
 .dialog-close { position: absolute; right: 12px; top: 8px; margin: 0; }
 .dialog-close button { border: 0; background: none; font-size: 22px; cursor: pointer; color: var(--muted); }
 .details { margin: 0; }
-.detail-row { display: grid; grid-template-columns: 150px 1fr; gap: 4px 14px; padding: 6px 0; border-top: 1px solid var(--line); }
+.detail-row { display: grid; grid-template-columns: 150px 1fr; gap: 4px 14px; padding: 7px 0; border-top: 1px solid var(--line); }
 .detail-row:first-child { border-top: 0; }
 .detail-row dt { color: var(--muted); }
 .detail-row dd { margin: 0; }
 .detail-row ul { margin: 0; padding-left: 18px; }
-.site-footer { border-top: 1px solid var(--line); padding: 16px 0 28px; font-size: 13px; }
-.site-footer p { margin: 4px 0; }
-.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 6px; }
+.site-footer { margin-top: 24px; padding: 22px 0 30px; border-top: 1px solid var(--line); background: var(--surface); font-size: 13.5px; }
+.site-footer p { margin: 3px 0; }
+.footer-title { font-weight: 700; font-size: 14.5px; }
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 10px; }
 .footer-links .link-button { padding: 0; }
+/* "关于"和"数据"弹窗 / the About and Data panels */
+.details-dialog h3 { margin: 20px 0 8px; font-size: 15px; letter-spacing: -0.005em; }
+.dialog-lead { margin: 0 0 6px; font-size: 15px; line-height: 1.6; }
+.dialog-actions { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 0; }
+.dialog-actions .link-button { padding: 0; }
+.folder-list { margin: 0; padding-left: 20px; }
+.folder-list li + li { margin-top: 6px; }
+.folder-list code { font-weight: 650; }
+.dialog-downloads { margin: 4px 0 0; padding: 0; }
 .method-notes { margin: 0 0 16px; padding-left: 20px; }
 .method-notes li + li { margin-top: 8px; }
 .data-provenance code { overflow-wrap: anywhere; }
@@ -316,17 +882,88 @@ td.evidence { white-space: nowrap; }
 .evidence-tooltip {
   position: fixed; z-index: 1000; pointer-events: none;
   width: max-content; max-width: min(340px, calc(100vw - 16px));
-  padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
   background: var(--surface); color: var(--text); font-size: 13px; line-height: 1.5;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18); white-space: normal;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); white-space: normal;
 }
 
+@media (max-width: 1100px) {
+  .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 四张卡片排成两行两列 / the four cards in two rows */
+}
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 28px; }
+  /* 窄屏上图放到搜索框下面，居中 / on narrow screens the figure sits under the search, centred */
+  .hero-art { justify-self: center; max-width: 420px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .genome-size-list { grid-template-columns: 1fr; }
+  .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 640px) {
-  h1 { font-size: 21px; }
+  .wrap { padding: 0 16px; }
+  .features { grid-template-columns: 1fr; gap: 12px; }
+  /* 手机上卡片紧凑一些，四张不至于太长 / more compact cards on phones, so the four do not run too long */
+  .feature { padding: 16px 16px 14px; }
+  .feature svg { width: 34px; height: 34px; padding: 7px; }
+  .feature h2 { margin: 10px 0 4px; font-size: 16px; }
+  .feature p { font-size: 14px; }
+  .feature-link { margin-top: 10px; }
+  .data-band { padding: 14px 16px; }
+  main { padding: 4px 16px 40px; }
+  .topbar-inner { height: 54px; }
+  .brand-name { font-size: 14.5px; }
+  /* 手机上：关于、数据、方法、数据集收进菜单按钮，点开是一个下拉面板
+     Phones: About, Data, Methods and Dataset fold into the menu button, which opens a drop-down panel */
+  .icon-button.menu-button { display: inline-grid; }
+  .topnav-links { display: none; }
+  .topnav.menu-open .topnav-links {
+    display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+    position: absolute; top: 100%; right: 12px; min-width: 200px; padding: 8px;
+    background: var(--hero-from); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px;
+    box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.65);
+  }
+  .topnav.menu-open .topnav-links .nav-link { padding: 11px 12px; font-size: 15px; text-align: left; }
+  .hero { padding: 40px 0 22px; }
+  .subtitle { font-size: 16px; margin: 14px 0 22px; }
+  .search { flex-wrap: wrap; }
+  .search input { flex: 1 1 100%; padding-left: 44px; }
+  .search-icon { top: 29px; left: 18px; transform: none; }
+  .search select { flex: 1 1 auto; max-width: none; padding: 10px 12px; border-left: 0; border-top: 1px solid var(--line); }
+  .search button { padding: 10px 22px; margin-top: 0; }
+  .stats { margin-top: 32px; }
+  .stat { padding: 13px 16px; }
+  .stat-value { font-size: 22px; }
+  .stat-panel { padding: 14px 16px; }
+  .sharing-chart { grid-template-columns: 30px minmax(0, 1fr); column-gap: 6px; }
+  .sharing-plot, .sharing-xticks { column-gap: 1px; }
+  .sharing-xticks { font-size: 9.5px; }
+  .bar-label-minor { display: none; }   /* 窄屏上相邻标注会重叠，只留核心那一根 / adjacent labels collide on phones */
+  .sharing-xlabel { margin-left: 36px; }
+  .genome-size-list li { grid-template-columns: 120px minmax(0, 1fr) 62px; gap: 10px; font-size: 12.5px; }
   .facts, .legend dl { grid-template-columns: 1fr; }
   .facts dt { margin-top: 6px; }
   .detail-row { grid-template-columns: 1fr; }
   .hcell { min-width: 180px; }
   .genome-selection-actions { width: 100%; }
   .genome-selection-actions .selection-button { flex: 1; }
+  /* 注释选择默认收起，只留"已选几套"和按钮 / folded by default: only the count and the toggle stay */
+  .control-genomes { padding: 10px 14px; }
+  .genome-selection-title { width: 100%; }
+  .selection-toggle { display: inline-block; }
+  .control-genomes:not(.chips-open) #genome-chips,
+  .control-genomes:not(.chips-open) .genome-selection-actions { display: none; }
+  .control-genomes:not(.chips-open) .genome-selection-header { margin-bottom: 0; }
+  .gene-card { padding: 18px 16px 14px; }
+}
+@media (max-width: 480px) {
+  /* 窄手机上顶栏放不下时，站名截断而不是撑出横向滚动 / on narrow phones the site name truncates instead of overflowing */
+  .topbar-inner { gap: 6px; }
+  .brand { gap: 8px; font-size: 13.5px; min-width: 0; }
+  .brand-mark { width: 26px; height: 26px; }
+  .brand-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .topnav { flex: none; }
+  .icon-button { width: 34px; height: 34px; margin-left: 4px; }
+  .eyebrow { letter-spacing: 0.1em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

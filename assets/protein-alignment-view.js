@@ -1,4 +1,4 @@
-// One on-demand representative-isoform alignment example. Proteins are aligned
+// On-demand selected-transcript alignments and the retained representative example. Proteins are aligned
 // by Kalign in a browser worker; matching CDS codons follow that same alignment.
 "use strict";
 
@@ -52,6 +52,7 @@ window.ProteinAlignmentView = (() => {
 
   // Reject a stale example before starting an alignment, even if IDs look familiar.
   async function fetchSequences(options, signal) {
+    if (options.sequenceSource) return options.sequenceSource.proteins(options.members, signal);
     const { example, manifest, members } = options;
     const data = await fetchPacket(example, options.downloadBase, signal);
     checkPacketContext(data, options, "protein");
@@ -74,6 +75,7 @@ window.ProteinAlignmentView = (() => {
   }
 
   async function fetchCds(options, proteins, signal) {
+    if (options.sequenceSource) return options.sequenceSource.cds(proteins, signal);
     const data = await fetchPacket(options.example.cds, options.downloadBase, signal);
     checkPacketContext(data, options, "CDS");
     require(data.genetic_code?.id === 1, "The CDS requires an unsupported genetic code.");
@@ -109,23 +111,35 @@ window.ProteinAlignmentView = (() => {
   }
 
   function fasta(rows) {
-    return rows.map((row) => `>${row.genome}|${row.gene_id} protein=${row.protein_id} transcript=${row.transcript_id}\n`
+    return rows.map((row) => `>${row.genome}|${row.gene_id} protein=${row.protein_id} transcript=${row.transcript_id}`
+      + (row.transcript_key ? ` gff_transcript=${row.transcript_key}` : "") + "\n"
       + row.sequence.match(/.{1,80}/g).join("\n")).join("\n") + "\n";
   }
 
   function memberTable(rows) {
     const fields = ["genome", "gene_id", "protein_id", "transcript_id", "chromosome", "start", "end", "length", "sha256"];
+    if (rows.some((row) => row.transcript_key)) fields.push("transcript_key");
+    if (rows.some((row) => row.candidate_source)) fields.push("candidate_source", "homeolog_selected", "location_status",
+      "identity", "query_coverage", "target_coverage", "bitscore", "evalue", "synteny", "orthofinder",
+      "metric_reference", "metric_query_genome", "metric_query_gene_id", "metric_query_protein_id", "metric_target_protein_id");
     return [fields.join("\t"), ...rows.map((row) => fields.map((key) => row[key]).join("\t"))].join("\n") + "\n";
   }
 
   function cdsMemberTable(proteins, cdsRows) {
     const fields = ["genome", "gene_id", "protein_id", "transcript_id", "protein_length_aa",
       "cds_length_nt", "coding_cds_length_nt", "terminal_stop", "protein_sha256", "cds_sha256"];
+    const hasTranscriptKeys = proteins.some((row) => row.transcript_key);
+    if (hasTranscriptKeys) fields.push("transcript_key");
+    const candidateFields = proteins.some((row) => row.candidate_source)
+      ? ["candidate_source", "homeolog_selected", "location_status", "identity", "query_coverage", "target_coverage", "bitscore", "evalue", "synteny", "orthofinder",
+        "metric_reference", "metric_query_genome", "metric_query_gene_id", "metric_query_protein_id", "metric_target_protein_id"] : [];
+    fields.push(...candidateFields);
     return [fields.join("\t"), ...proteins.map((protein, index) => {
       const cds = cdsRows[index];
       return [protein.genome, protein.gene_id, protein.protein_id, protein.transcript_id,
         protein.length, cds.length, cds.alignment_cds.length, cds.terminal_stop || "",
-        protein.sha256, cds.sha256].join("\t");
+        protein.sha256, cds.sha256, ...(hasTranscriptKeys ? [protein.transcript_key] : []),
+        ...candidateFields.map((key) => protein[key])].join("\t");
     })].join("\n") + "\n";
   }
 
@@ -163,6 +177,8 @@ window.ProteinAlignmentView = (() => {
     const isCds = mode === "CDS";
     const summary = columnSummary(rows, isCds);
     const reference = rows.find((row) => row.genome === "Joelle") || rows[0];
+    // 显示名称来自网站设置，数据里仍是原编号 / display names come from the site settings; the data keep the IDs
+    const name = (genome) => (window.genomeLabel ? window.genomeLabel(genome) : genome);
     const differences = element("input", { type: "checkbox", onchange: () => {
       viewport.classList.toggle("msa-highlight-differences", differences.checked);
     } });
@@ -176,7 +192,7 @@ window.ProteinAlignmentView = (() => {
       element("th", { scope: "col", "aria-label": isCds ? "Aligned coding bases" : "Aligned amino acids" }, ruler))));
     const tbody = element("tbody");
     for (const row of rows) {
-      const track = element("div", { class: "msa-track", "aria-label": `${row.genome}: ${row.sequence}` });
+      const track = element("div", { class: "msa-track", "aria-label": `${name(row.genome)}: ${row.sequence}` });
       for (const [index, residue] of [...row.sequence].entries()) {
         const displayResidue = isCds ? residue.toUpperCase() : residue;
         const referenceResidue = isCds ? reference.sequence[index].toUpperCase() : reference.sequence[index];
@@ -189,7 +205,8 @@ window.ProteinAlignmentView = (() => {
         }, displayResidue));
       }
       const label = element("th", { class: "msa-label", scope: "row" },
-        element("strong", {}, row.genome), element("code", {}, row.gene_id),
+        element("strong", {}, name(row.genome)), element("code", {}, row.gene_id),
+        row.transcript_key ? element("small", { title: row.transcript_key }, row.transcript_id) : null,
         element("small", {}, `${row.length.toLocaleString("en-US")} ${isCds ? "nt" : "aa"}`
           + (isCds && row.terminal_stop ? " incl. stop" : "")));
       tbody.append(element("tr", { "data-genome": row.genome }, label, element("td", {}, track)));
@@ -216,11 +233,11 @@ window.ProteinAlignmentView = (() => {
     const jump = (column) => { viewport.scrollLeft = column ? column * 11 + 10 : 0; updateRange(); };
     const navigation = element("div", { class: "msa-navigation" },
       downloadButton("Start", () => jump(0)),
-      downloadButton(`First ${reference.genome} ${isCds ? "base" : "residue"}`, () => jump(firstReferenceColumn)),
+      downloadButton(`First ${name(reference.genome)} ${isCds ? "base" : "residue"}`, () => jump(firstReferenceColumn)),
       downloadButton("End", () => { viewport.scrollLeft = viewport.scrollWidth; updateRange(); }), rangeLabel);
     container.replaceChildren(
       element("div", { class: "msa-view-controls" },
-        element("label", {}, differences, ` Highlight differences from ${reference.genome}`),
+        element("label", {}, differences, ` Highlight differences from ${name(reference.genome)}`),
         element("span", { class: "muted small" }, `${rows.length} ${isCds ? "CDS sequences" : "proteins"} · `
           + `${result.alignmentLength.toLocaleString("en-US")} alignment columns`)),
       navigation, viewport,
@@ -261,6 +278,14 @@ window.ProteinAlignmentView = (() => {
   }
 
   function methodDetails(options, result, isCds) {
+    if (options.sequenceSource) return element("details", { class: "group-technical" },
+      element("summary", {}, "Alignment method and sequence source"),
+      element("p", { class: "muted small" }, isCds
+        ? "Each verified CDS codon follows the selected transcript's protein alignment. CDS translation, identifiers and checksums must match that exact protein."
+        : `${result.algorithm} ${result.version}: ${result.parameters}. The recorded protein normalization is retained; source sequences and normalization records remain in the data shards.`),
+      element("p", { class: "muted small" }, "Sequences load on demand. Choosing transcripts changes this alignment only; gene-level evidence is unchanged. ",
+        element("a", { href: options.sequenceSource.indexUrl }, "Sequence data index"), " · ",
+        element("a", { href: "assets/vendor/kalign-3.3.1/SOURCE.md" }, "Kalign source and license")));
     const descriptor = isCds ? options.example.cds : options.example;
     const method = isCds
       ? "Each verified CDS codon follows its representative protein's Kalign alignment. No separate nucleotide alignment is calculated. "
@@ -284,7 +309,7 @@ window.ProteinAlignmentView = (() => {
       dialog.classList.add("alignment-dialog");
       dialog.addEventListener("close", () => { if (active === session) cancel(); }, { once: true });
     }
-    const status = element("p", { class: "message", role: "status", "aria-live": "polite" }, "Loading representative protein sequences…");
+    const status = element("p", { class: "message", role: "status", "aria-live": "polite" }, "Loading selected protein sequences…");
     const view = element("div", { class: "msa-output" });
     const downloads = element("div", { class: "msa-downloads" });
     const actions = element("div", { class: "msa-actions" });
@@ -353,9 +378,14 @@ window.ProteinAlignmentView = (() => {
     retry.hidden = true;
     actions.append(cancelButton, retry);
     body.replaceChildren(
-      element(dialog ? "h2" : "h3", {}, `Sequence alignment · ${example.subgenome} · ${options.chromosomes.join(" / ")}`),
-      element("p", { class: "msa-intro" }, `Sample for ${options.homeologs.id}: one representative isoform per selected annotation. `
-        + `The original query is on ${options.homeologs.sg}; this alignment compares the ${example.subgenome} candidates.`),
+      element(dialog ? "h2" : "h3", {}, options.sequenceSource ? "Sequence alignment · selected genes"
+        : `Sequence alignment · ${example.subgenome} · ${options.chromosomes.join(" / ")}`),
+      element("p", { class: "msa-intro" }, (options.sequenceSource
+        ? `${options.homeologs.id}: one selected transcript per included gene. `
+        : `Sample for ${options.homeologs.id}: one representative isoform per selected annotation. `)
+        + (options.sequenceSource
+          ? `Starting Homeologs column: ${example.subgenome} (${options.chromosomes.join(" / ") || "unassigned"}). Sequence alternatives may be on other chromosomes or unplaced sequences.`
+          : `The original query is on ${options.homeologs.sg}; this alignment compares the ${example.subgenome} candidates.`)),
       modes, status, actions, downloads, view,
     );
     if (dialog && !dialog.open) dialog.showModal();
@@ -377,7 +407,12 @@ window.ProteinAlignmentView = (() => {
       const aligned = new Map(result.aligned.map((row) => [row.name, row.sequence]));
       proteinAligned = rows.map((row) => ({ ...row, sequence: aligned.get(row.name) }));
       proteinButton.disabled = false;
-      cdsButton.disabled = !example.cds;
+      const missingCds = options.sequenceSource ? members.filter((m) => m.cds_status !== "translation_verified") : [];
+      cdsButton.disabled = !example.cds || missingCds.length > 0;
+      if (missingCds.length) {
+        cdsButton.title = "Matching CDS unavailable: " + missingCds.map((m) => `${m.genome}: ${m.cds_status}`).join("; ");
+        body.insertBefore(element("p", { class: "muted small" }, cdsButton.title), modes);
+      }
       await showMode("protein");
       cancelButton.hidden = true;
       retry.hidden = false;

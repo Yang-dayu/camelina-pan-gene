@@ -1,0 +1,449 @@
+{
+ "created_utc": "2026-11-04T18:08:25Z",
+ "gap_rule": "a run of >= 10 N splits a scaffold",
+ "checks_passed": "5/5",
+ "phytozome_comparison": {
+  "Suneson": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Prytzh": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Acsn226": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Ames1043": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Borowska": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "CAM116": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "CAM70": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "CN113611": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Giessen4": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Joelle": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Licalla": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Lindo": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "Svalof": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  },
+  "SunesonJGI": {
+   "scaffold_size": 0.0,
+   "scaffold_count": 0.0,
+   "scaffold_n50": 0.0,
+   "contig_count": 0.0,
+   "contig_n50": 0.0
+  }
+ },
+ "assemblies": [
+  {
+   "genome": "DH55V3",
+   "assembly_version": "V3",
+   "sequences": 363,
+   "total_bp": 678314419,
+   "scaffold_n50": 32125223,
+   "gaps": 32,
+   "gap_bp": 3200,
+   "contigs": 395,
+   "contig_n50": 15617697,
+   "anchored_pct": 96.39,
+   "unplaced_sequences": 343,
+   "unplaced_bp": 24515537,
+   "scaffolding": {
+    "method": "PacBio HiFi and ONT contigs (hifiasm); chromosomes built from Hi-C (HiC-Pro, EndHiC, 3D-DNA, Juicebox)",
+    "basis": "Hi-C",
+    "source": "Chaudhary et al. 2026, Nat. Commun. 17:7992"
+   }
+  },
+  {
+   "genome": "DH55V2",
+   "assembly_version": "V2",
+   "sequences": 37418,
+   "total_bp": 641452262,
+   "scaffold_n50": 30099736,
+   "gaps": 35057,
+   "gap_bp": 45012758,
+   "contigs": 72475,
+   "contig_n50": 32727,
+   "anchored_pct": 94.87,
+   "unplaced_sequences": 37398,
+   "unplaced_bp": 32908259,
+   "scaffolding": {
+    "method": "Illumina and 454 short-read assembly (SOAPdenovo, Bambus); pseudochromosomes anchored with a genetic map of 3,575 loci (Lindo x Licalla RILs), scaffolds with few markers placed by collinearity with Arabidopsis",
+    "basis": "genetic map",
+    "source": "Kagale et al. 2014, Nat. Commun. 5:3706"
+   }
+  },
+  {
+   "genome": "Suneson",
+   "assembly_version": "MSU_CS-sun_unmasked",
+   "sequences": 1621,
+   "total_bp": 747943248,
+   "scaffold_n50": 31294119,
+   "gaps": 2321,
+   "gap_bp": 1167212,
+   "contigs": 3942,
+   "contig_n50": 18789843,
+   "anchored_pct": 87.3,
+   "unplaced_sequences": 1601,
+   "unplaced_bp": 95006711,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs with Hi-C phasing (hifiasm) and Hi-C scaffolding (HapHiC), Montana State University",
+    "basis": "Hi-C",
+    "source": "assembly records of S. Decker (unpublished); the same assembly as SunesonJGI"
+   }
+  },
+  {
+   "genome": "Prytzh",
+   "assembly_version": "v1.0",
+   "sequences": 20,
+   "total_bp": 639136992,
+   "scaffold_n50": 31673258,
+   "gaps": 50,
+   "gap_bp": 500000,
+   "contigs": 70,
+   "contig_n50": 17859843,
+   "anchored_pct": 100.0,
+   "unplaced_sequences": 0,
+   "unplaced_bp": 0,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); chromosomes built from Omni-C/Hi-C (Juicer, 3D-DNA)",
+    "basis": "Hi-C",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "Acsn226",
+   "assembly_version": "v1.0",
+   "sequences": 23,
+   "total_bp": 597763027,
+   "scaffold_n50": 29463871,
+   "gaps": 74,
+   "gap_bp": 740000,
+   "contigs": 97,
+   "contig_n50": 13293336,
+   "anchored_pct": 99.91,
+   "unplaced_sequences": 3,
+   "unplaced_bp": 522305,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "Ames1043",
+   "assembly_version": "v1.0",
+   "sequences": 20,
+   "total_bp": 650405878,
+   "scaffold_n50": 32424930,
+   "gaps": 26,
+   "gap_bp": 260000,
+   "contigs": 46,
+   "contig_n50": 20290381,
+   "anchored_pct": 100.0,
+   "unplaced_sequences": 0,
+   "unplaced_bp": 0,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "Borowska",
+   "assembly_version": "v1.0",
+   "sequences": 21,
+   "total_bp": 650178466,
+   "scaffold_n50": 32426870,
+   "gaps": 30,
+   "gap_bp": 300000,
+   "contigs": 51,
+   "contig_n50": 19250141,
+   "anchored_pct": 99.86,
+   "unplaced_sequences": 1,
+   "unplaced_bp": 915471,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "CAM116",
+   "assembly_version": "v1.0",
+   "sequences": 20,
+   "total_bp": 656378771,
+   "scaffold_n50": 32480016,
+   "gaps": 12,
+   "gap_bp": 120000,
+   "contigs": 32,
+   "contig_n50": 30427962,
+   "anchored_pct": 100.0,
+   "unplaced_sequences": 0,
+   "unplaced_bp": 0,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "CAM70",
+   "assembly_version": "v1.0",
+   "sequences": 21,
+   "total_bp": 653386534,
+   "scaffold_n50": 32686504,
+   "gaps": 5,
+   "gap_bp": 50000,
+   "contigs": 26,
+   "contig_n50": 31266518,
+   "anchored_pct": 99.99,
+   "unplaced_sequences": 1,
+   "unplaced_bp": 62011,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "CN113611",
+   "assembly_version": "v1.0",
+   "sequences": 21,
+   "total_bp": 647076690,
+   "scaffold_n50": 32092550,
+   "gaps": 26,
+   "gap_bp": 260000,
+   "contigs": 47,
+   "contig_n50": 23792740,
+   "anchored_pct": 99.96,
+   "unplaced_sequences": 1,
+   "unplaced_bp": 226725,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "Giessen4",
+   "assembly_version": "v1.0",
+   "sequences": 21,
+   "total_bp": 636716658,
+   "scaffold_n50": 31389649,
+   "gaps": 53,
+   "gap_bp": 530000,
+   "contigs": 74,
+   "contig_n50": 17669754,
+   "anchored_pct": 99.89,
+   "unplaced_sequences": 1,
+   "unplaced_bp": 720891,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "Joelle",
+   "assembly_version": "v1.0",
+   "sequences": 23,
+   "total_bp": 614234292,
+   "scaffold_n50": 30020225,
+   "gaps": 49,
+   "gap_bp": 490000,
+   "contigs": 72,
+   "contig_n50": 17295501,
+   "anchored_pct": 99.82,
+   "unplaced_sequences": 3,
+   "unplaced_bp": 1122932,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "Licalla",
+   "assembly_version": "v1.0",
+   "sequences": 22,
+   "total_bp": 635652871,
+   "scaffold_n50": 31244477,
+   "gaps": 49,
+   "gap_bp": 490000,
+   "contigs": 71,
+   "contig_n50": 17362933,
+   "anchored_pct": 99.87,
+   "unplaced_sequences": 2,
+   "unplaced_bp": 807167,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "Lindo",
+   "assembly_version": "v1.0",
+   "sequences": 22,
+   "total_bp": 621265901,
+   "scaffold_n50": 30021819,
+   "gaps": 70,
+   "gap_bp": 700000,
+   "contigs": 92,
+   "contig_n50": 14313344,
+   "anchored_pct": 99.89,
+   "unplaced_sequences": 2,
+   "unplaced_bp": 693291,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "Svalof",
+   "assembly_version": "v1.0",
+   "sequences": 23,
+   "total_bp": 607871851,
+   "scaffold_n50": 31360481,
+   "gaps": 71,
+   "gap_bp": 710000,
+   "contigs": 94,
+   "contig_n50": 17170784,
+   "anchored_pct": 99.83,
+   "unplaced_sequences": 3,
+   "unplaced_bp": 1020891,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); contigs ordered and oriented by synteny to Prytzh v1.0, no Hi-C",
+    "basis": "synteny to Prytzh",
+    "source": "Bird et al. 2024, Genetics 228:iyae183"
+   }
+  },
+  {
+   "genome": "SunesonJGI",
+   "assembly_version": "v1.0",
+   "sequences": 1621,
+   "total_bp": 747943248,
+   "scaffold_n50": 31294119,
+   "gaps": 2321,
+   "gap_bp": 1167212,
+   "contigs": 3942,
+   "contig_n50": 18789843,
+   "anchored_pct": 87.3,
+   "unplaced_sequences": 1601,
+   "unplaced_bp": 95006711,
+   "scaffolding": {
+    "method": "The Montana State University assembly of S. Decker's annotation (PacBio HiFi contigs, hifiasm; Hi-C scaffolding, HapHiC), annotated by JGI",
+    "basis": "Hi-C",
+    "source": "JGI readme; the same DNA sequences as the Montana State University assembly"
+   }
+  },
+  {
+   "genome": "SunesonFang2023",
+   "assembly_version": "SUN_v2",
+   "sequences": 62,
+   "total_bp": 644491969,
+   "scaffold_n50": 32184682,
+   "gaps": 95,
+   "gap_bp": 9500,
+   "contigs": 157,
+   "contig_n50": 12031512,
+   "anchored_pct": 98.31,
+   "unplaced_sequences": 42,
+   "unplaced_bp": 10886108,
+   "scaffolding": {
+    "method": "ONT contigs (Flye, Medaka, Pilon); chromosomes by RagTag against DH55 v2",
+    "basis": "synteny to DH55 v2",
+    "source": "Fang et al. 2023, Front. Plant Sci. 14:1271625"
+   }
+  },
+  {
+   "genome": "SunesonBrock2024",
+   "assembly_version": "CsSunv4.1",
+   "sequences": 339,
+   "total_bp": 660885520,
+   "scaffold_n50": 29397893,
+   "gaps": 259,
+   "gap_bp": 238717,
+   "contigs": 598,
+   "contig_n50": 7699600,
+   "anchored_pct": 92.33,
+   "unplaced_sequences": 319,
+   "unplaced_bp": 50660293,
+   "scaffolding": {
+    "method": "PacBio HiFi contigs (hifiasm); chromosomes by RagTag against DH55; Hi-C used to check joins",
+    "basis": "synteny to DH55, Hi-C checked",
+    "source": "Brock et al. 2024, Hortic. Res. 11:uhae247"
+   }
+  }
+ ]
+}

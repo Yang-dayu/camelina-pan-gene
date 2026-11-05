@@ -1,6 +1,14 @@
 # Local preview data and server; the public page reads pinned Hugging Face files.
+.local/
+START_LOCAL_PREVIEW.cmd
+HANDOFF.md
 sample_data/
 serve.ps1
+serve-local.mjs
+gene-description-service.mjs
+start-local-preview.ps1
+start-18-annotation-preview.ps1
+start-hf-preview.ps1
 
 # Local packages, editor backups and temporary files.
 *.zip
