@@ -20,7 +20,7 @@ The interface opens in English by default. Use the language menu for Chinese (`?
 All query, sequence, functional-annotation and download URLs are pinned to commit
 `8d8fd8e2408a20d16eff79412adc298bdc846e30`, tagged **18_genomes_V2_function**:
 
-[Browse this Hugging Face release](https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/tree/8d8fd8e2408a20d16eff79412adc298bdc846e30)
+[Browse this Hugging Face release](https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/tree/8d8fd8e2408a20d16eff79412adc298bdc846e30)
 
 The browser fetches static shards on demand; no SQLite download or database server is needed for interactive queries.
 

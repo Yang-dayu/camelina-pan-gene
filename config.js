@@ -2,8 +2,8 @@
 // (step 06) and manifest.json plus genes/ under homeologBase (step 07).
 //   Local test:   "sample_data/" and "sample_data/homeologs/"  (small copies, served by serve.ps1)
 //   Published:    the Hugging Face dataset, pinned to one commit so the page and the data stay in step, e.g.
-//                 "https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/resolve/<commit>/web/"
-//                 "https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/resolve/<commit>/homeologs/"
+//                 "https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/resolve/<commit>/web/"
+//                 "https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/resolve/<commit>/homeologs/"
 // Complete RNA/protein ID lookup, verified against the original annotations.
 // All data and download addresses use the same verified dataset revision.
 // For a local test with the small sample copies use "sample_data/", "sample_data/homeologs/" and downloadBase null.
@@ -15,17 +15,17 @@ window.PANGENE_CONFIG = {
   // 标签指向 8d8fd8e2；所有数据地址继续固定到下面同一个完整提交号。
   // Verified HF release 18_genomes_V2_function: 18 annotations plus function/, every file verified by hash.
   // The tag points to 8d8fd8e2; keep every data URL pinned to the same full commit hash below.
-  dataBase: "https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/web/",
-  homeologBase: "https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/homeologs/",
+  dataBase: "https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/web/",
+  homeologBase: "https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/homeologs/",
   // Load transcript metadata first, then the selected protein and matching CDS shards.
-  sequenceBase: "https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/sequences/",
+  sequenceBase: "https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/sequences/",
   proteinAlignmentExamples: [],
   // The static HF preview does not use the separate local gene-description service.
   geneDescriptionApiBase: null,
   // 功能注释分片（六个工具的原始结果，按转录本），和上面同一个提交；设为 null 就不显示面板。
   // Functional-annotation shards (the six tools' raw results, per transcript), from the same commit as above;
   // null hides the panel.
-  functionBase: "https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/function/",
+  functionBase: "https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/function/",
   // 这一版的 HF 标签和更早的版本，显示在"关于"和"数据"弹窗里；提交号要和上面的地址一致
   // The HF tag of this release and the earlier releases, shown in the About and Data panels; the commit is the one
   // in the addresses above.
@@ -148,8 +148,8 @@ window.PANGENE_CONFIG = {
   ],
   // Whole-data downloads for R. downloadBase is the dataset root (same commit as above); null until published.
   // Folders link to browseBase (the Hub's file browser), single files to downloadBase (direct download).
-  downloadBase: "https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/",
-  browseBase: "https://huggingface.co/datasets/Dayu99/camelina-sativa-pan-gene-id/tree/8d8fd8e2408a20d16eff79412adc298bdc846e30/",
+  downloadBase: "https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/resolve/8d8fd8e2408a20d16eff79412adc298bdc846e30/",
+  browseBase: "https://huggingface.co/datasets/Dayu99/Camelina-sativa-pan-gene-DB/tree/8d8fd8e2408a20d16eff79412adc298bdc846e30/",
   downloads: [
     { path: "web/tables/genes.tsv.gz", label: "All genes with their IDs, positions and status" },
     { path: "web/tables/relations/", label: "Related genes per query annotation: pairwise evidence and alignment metrics", folder: true },
