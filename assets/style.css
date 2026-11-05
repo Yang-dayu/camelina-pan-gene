@@ -91,6 +91,7 @@ main:focus { outline: none; }
 .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px; }
 .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--hero-text); text-decoration: none; font-size: 15.5px; letter-spacing: 0.005em; white-space: nowrap; }
 .brand strong { font-weight: 700; }
+.brand-species, .brand-resource { white-space: nowrap; }
 .brand-mark { width: 30px; height: 30px; flex: none; }
 .brand-ring { fill: rgba(255, 255, 255, 0.07); stroke: rgba(255, 255, 255, 0.32); stroke-width: 1; }
 .brand-leaf { fill: #7fd1a6; }
@@ -891,6 +892,19 @@ td.evidence { white-space: nowrap; }
   .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 四张卡片排成两行两列 / the four cards in two rows */
 }
 @media (max-width: 900px) {
+  /* 窄屏站名分两行完整显示，导航链接收进菜单，给语言和主题按钮留空间。
+     On narrow screens the full name uses two lines; links fold into the menu to leave room for language and theme controls. */
+  .brand-name { font-size: 14.5px; line-height: 1.2; white-space: normal; }
+  .brand-resource { display: block; }
+  .icon-button.menu-button { display: inline-grid; }
+  .topnav-links { display: none; }
+  .topnav.menu-open .topnav-links {
+    display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+    position: absolute; top: 100%; right: 12px; min-width: 200px; padding: 8px;
+    background: var(--hero-from); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px;
+    box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.65);
+  }
+  .topnav.menu-open .topnav-links .nav-link { padding: 11px 12px; font-size: 15px; text-align: left; }
   .hero-inner { grid-template-columns: 1fr; gap: 28px; }
   /* 窄屏上图放到搜索框下面，居中 / on narrow screens the figure sits under the search, centred */
   .hero-art { justify-self: center; max-width: 420px; }
@@ -910,18 +924,6 @@ td.evidence { white-space: nowrap; }
   .data-band { padding: 14px 16px; }
   main { padding: 4px 16px 40px; }
   .topbar-inner { height: 54px; }
-  .brand-name { font-size: 14.5px; }
-  /* 手机上：关于、数据、方法、数据集收进菜单按钮，点开是一个下拉面板
-     Phones: About, Data, Methods and Dataset fold into the menu button, which opens a drop-down panel */
-  .icon-button.menu-button { display: inline-grid; }
-  .topnav-links { display: none; }
-  .topnav.menu-open .topnav-links {
-    display: flex; flex-direction: column; align-items: stretch; gap: 2px;
-    position: absolute; top: 100%; right: 12px; min-width: 200px; padding: 8px;
-    background: var(--hero-from); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px;
-    box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.65);
-  }
-  .topnav.menu-open .topnav-links .nav-link { padding: 11px 12px; font-size: 15px; text-align: left; }
   .hero { padding: 40px 0 22px; }
   .subtitle { font-size: 16px; margin: 14px 0 22px; }
   .search { flex-wrap: wrap; }
@@ -955,13 +957,15 @@ td.evidence { white-space: nowrap; }
   .gene-card { padding: 18px 16px 14px; }
 }
 @media (max-width: 480px) {
-  /* 窄手机上顶栏放不下时，站名截断而不是撑出横向滚动 / on narrow phones the site name truncates instead of overflowing */
+  /* 窄手机上保留完整两行站名和全部按钮，不使用省略号。
+     Narrow phones keep the full two-line name and every control, without ellipsis. */
   .topbar-inner { gap: 6px; }
   .brand { gap: 8px; font-size: 13.5px; min-width: 0; }
   .brand-mark { width: 26px; height: 26px; }
-  .brand-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .brand-name { min-width: 0; font-size: 13px; }
   .topnav { flex: none; }
-  .icon-button { width: 34px; height: 34px; margin-left: 4px; }
+  .icon-button { width: 34px; height: 34px; margin-left: 0; }
+  .data-band .nowrap { white-space: normal; }   /* 版本说明可换行 / let the release note wrap */
   .eyebrow { letter-spacing: 0.1em; }
 }
 @media (prefers-reduced-motion: reduce) {

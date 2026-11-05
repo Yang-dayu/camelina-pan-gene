@@ -1,4 +1,4 @@
-# Camelina Pan-Gene Database
+# Camelina sativa Pan-Gene Database
 
 Gene correspondence, homeologs and functional annotation across **18 annotations of 14 Camelina sativa accessions**.
 

@@ -1,4 +1,4 @@
-// Camelina Pan-Gene Database: a static page over the step-06 files (CONFIG.dataBase) and the step-07
+// Camelina sativa Pan-Gene Database: a static page over the step-06 files (CONFIG.dataBase) and the step-07
 // predicted homeologs (CONFIG.homeologBase). See the manifest.json of each for the file layout.
 //
 // A lookup takes two downloads:
@@ -1989,7 +1989,7 @@ function renderFooter(homeologNote) {
   // 页脚两行：站名；注释数、分析名和数据版本合成一行 / two footer lines: the site name; annotations, analysis and
   // data revision in one line
   $("#footer").replaceChildren(...[
-    el("p", { class: "footer-title" }, "Camelina Pan-Gene Database"),
+    el("p", { class: "footer-title" }, "Camelina sativa Pan-Gene Database"),
     el("p", { class: "muted small" }, `Data from ${state.manifest.target_genomes.length} Camelina sativa annotations · `
       + `analysis ${state.manifest.run}${revision ? ` · data revision ${revision.slice(0, 8)}` : ""}`),
     CONFIG.localPreview ? el("p", { class: "message local-preview" }, CONFIG.localPreview.label || "Local preview · selected real queries from 18 annotations") : null,
@@ -2044,7 +2044,7 @@ function clearResult() {
   state.alignmentSubgenome = null;
   state.expanded = new Set();
   for (const id of ["#gene", "#controls", "#results", "#legend"]) $(id).hidden = true;
-  document.title = "Camelina Pan-Gene Database";
+  document.title = "Camelina sativa Pan-Gene Database";
 }
 
 async function lookup(id, genome) {
@@ -2077,7 +2077,7 @@ async function lookup(id, genome) {
     renderGene();
     renderControls();
     renderResults();
-    document.title = `${record.id} · Camelina Pan-Gene Database`;
+    document.title = `${record.id} · Camelina sativa Pan-Gene Database`;
     window.GeneDescription?.load({ container: $("#gene-description"), genome: g,
       geneId: record.id, geneKey: record.k, apiBase: CONFIG.geneDescriptionApiBase });
     // 功能注释面板：各工具的原始结果，按转录本显示 / functional annotation: each tool's raw results, per transcript
@@ -2160,8 +2160,8 @@ const ZH_TEXT = {
   // 顶栏、首页 / top bar and start page
   "Skip to content": "跳到正文", "About": "关于", "Data": "数据", "Methods": "方法", "Dataset": "数据集", "Menu": "菜单",
   "Site": "网站导航", "Close": "关闭", "Switch between light and dark colours": "切换浅色 / 深色",
-  "Camelina Pan-Gene Database: start page": "亚麻荠泛基因数据库：首页",
-  "Camelina Pan-Gene Database": "亚麻荠泛基因数据库",
+  "Camelina sativa Pan-Gene Database: start page": "亚麻荠泛基因数据库：首页",
+  "Camelina sativa Pan-Gene Database": "亚麻荠泛基因数据库",
   "Camelina sativa · allohexaploid oilseed · 20 chromosomes · three subgenomes": "亚麻荠 Camelina sativa · 异源六倍体油料作物 · 20 条染色体 · 三个亚基因组",
   "Gene correspondence, homeologs and functional annotation across 18 annotations of 14 accessions.":
     "14 个品种 18 套注释中的基因对应关系、部分同源基因与功能注释。",
@@ -2539,7 +2539,7 @@ const ZH_TEXT = {
 // 带数字、名字的句式；替换可以是字符串（$1…）或函数（返回 null 表示不翻）
 // Sentences with numbers or names; a replacement is a string ($1…) or a function (null means: leave it in English)
 const ZH_PATTERNS = [
-  [/^(.+) · Camelina Pan-Gene Database$/, "$1 · 亚麻荠泛基因数据库"],
+  [/^(.+) · Camelina sativa Pan-Gene Database$/, "$1 · 亚麻荠泛基因数据库"],
   [/^(\d+) annotations$/, "$1 套注释"],
   [/^(\d+) accessions$/, "$1 个品种"],
   [/^(\d+) annotations of (\d+) accessions; click for their sources, BUSCO and placement$/, "$2 个品种的 $1 套注释；点击查看来源、BUSCO 和定位比例"],

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Camelina Pan-Gene Database</title>
-  <meta name="description" content="Camelina Pan-Gene Database: gene correspondence, homeologs and functional annotation across 18 annotations of 14 Camelina sativa accessions, with protein and CDS sequences and in-browser alignment.">
+  <title>Camelina sativa Pan-Gene Database</title>
+  <meta name="description" content="Camelina sativa Pan-Gene Database: gene correspondence, homeologs and functional annotation across 18 annotations of 14 Camelina sativa accessions, with protein and CDS sequences and in-browser alignment.">
   <meta name="theme-color" content="#0f3a2b">
   <script>
     // Apply a saved colour theme before the first paint; without one the page follows the system setting.
@@ -21,14 +21,14 @@
       }
     } catch (error) {}
   </script>
-  <link rel="stylesheet" href="assets/style.css?v=20261105-ui-40">
+  <link rel="stylesheet" href="assets/style.css?v=20261105-ui-42">
 </head>
 <body class="is-home">
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="#" id="home-link" aria-label="Camelina Pan-Gene Database: start page">
+      <a class="brand" href="#" id="home-link" aria-label="Camelina sativa Pan-Gene Database: start page">
         <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
           <circle cx="16" cy="16" r="15" class="brand-ring"/>
           <path d="M9 22c3-9 11-14 15-13-1 5-6 12-15 13z" class="brand-leaf"/>
@@ -36,7 +36,7 @@
           <circle cx="16" cy="8.2" r="2.1" class="brand-sg2"/>
           <circle cx="20.5" cy="11" r="2.1" class="brand-sg3"/>
         </svg>
-        <span class="brand-name" data-i18n="brand.name">Camelina <strong>Pan-Gene</strong> Database</span>
+        <span class="brand-name" data-i18n="brand.name"><em class="brand-species">Camelina sativa</em> <span class="brand-resource"><strong>Pan-Gene</strong> Database</span></span>
       </a>
       <nav class="topnav" id="topnav" aria-label="Site">
         <!-- 窄屏上这几个链接收进菜单按钮 / on phones these links fold into the menu button -->
@@ -71,10 +71,10 @@
   <section class="hero" id="hero">
     <div class="wrap hero-inner">
       <div class="hero-copy">
-        <!-- 站名是属名 Camelina；物种全名放在这行小字里 / the name uses the genus; the full species name sits in this line -->
+        <!-- 首页和导航栏统一使用物种全名 / the homepage and navigation both use the full species name -->
         <p class="eyebrow">Camelina sativa · allohexaploid oilseed · 20 chromosomes · three subgenomes</p>
         <!-- 标题若要断行，在 "Pan-Gene Database" 前断 / if the title wraps, it breaks before "Pan-Gene Database" -->
-        <h1 data-i18n="hero.title">Camelina <span class="keep-together">Pan&#8209;Gene Database</span></h1>
+        <h1 data-i18n="hero.title"><em class="keep-together">Camelina sativa</em> <span class="keep-together">Pan&#8209;Gene Database</span></h1>
         <p class="subtitle">Gene correspondence, homeologs and functional annotation across 18 annotations of 14 accessions.</p>
         <form id="search" class="search" autocomplete="off">
           <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
@@ -297,15 +297,15 @@
   </footer>
 
   <!-- Bump the asset tag together whenever page scripts or styles change. -->
-  <script src="config.js?v=20261105-ui-40"></script>
-  <script src="assets/browser-alignment.js?v=20261105-ui-40"></script>
-  <script src="assets/codon-alignment.js?v=20261105-ui-40"></script>
-  <script src="assets/protein-alignment-view.js?v=20261105-ui-40"></script>
-  <script src="assets/alignment-selection.js?v=20261105-ui-40"></script>
-  <script src="assets/alignment-candidates.js?v=20261105-ui-40"></script>
-  <script src="assets/transcript-sequences.js?v=20261105-ui-40"></script>
-  <script src="assets/gene-description.js?v=20261105-ui-40"></script>
-  <script src="assets/functional-annotation.js?v=20261105-ui-40"></script>
-  <script src="assets/app.js?v=20261105-ui-40"></script>
+  <script src="config.js?v=20261105-ui-42"></script>
+  <script src="assets/browser-alignment.js?v=20261105-ui-42"></script>
+  <script src="assets/codon-alignment.js?v=20261105-ui-42"></script>
+  <script src="assets/protein-alignment-view.js?v=20261105-ui-42"></script>
+  <script src="assets/alignment-selection.js?v=20261105-ui-42"></script>
+  <script src="assets/alignment-candidates.js?v=20261105-ui-42"></script>
+  <script src="assets/transcript-sequences.js?v=20261105-ui-42"></script>
+  <script src="assets/gene-description.js?v=20261105-ui-42"></script>
+  <script src="assets/functional-annotation.js?v=20261105-ui-42"></script>
+  <script src="assets/app.js?v=20261105-ui-42"></script>
 </body>
 </html>
