@@ -154,7 +154,7 @@ function blocksText(blocks, kind = 'synteny') {
 function evidenceText(value) {
   const labels = {
     synteny: 'synteny', cross_synteny: 'cross-chromosome synteny', orthofinder: 'OrthoFinder',
-    sequence: 'protein sequence', own_homeolog_ortholog: 'via own homeolog', self: 'the query',
+    sequence: 'protein sequence', own_homeolog_ortholog: 'found via homeolog', self: 'the query',
   };
   return String(value || '').split('+').map((kind) => labels[kind] || kind)
     .filter(Boolean).join(' + ');
@@ -172,7 +172,7 @@ function badges({ synteny, crossSynteny = 0, orthofinder, sharedEntry, qcov, tco
     list.push(el('span', { class: 'badge syn', title: 'Direct syntenic pair' }, 'synteny'));
   }
   if (crossSynteny) {
-    const source = syntenyRun('cross_synteny') || 'the unrestricted run';
+    const source = syntenyRun('cross_synteny') || 'the all-chromosome run';
     const kind = crossSynteny === 2 ? 'anchor pair' : 'syntenic pair';
     list.push(el('span', {
       class: 'badge cross-syn',
@@ -181,11 +181,11 @@ function badges({ synteny, crossSynteny = 0, orthofinder, sharedEntry, qcov, tco
     }, crossSynteny === 2 ? 'cross-chr anchor' : 'cross-chr synteny'));
   }
   if (orthofinder) {
-    list.push(el('span', { class: 'badge of', title: 'OrthoFinder pairwise orthologue' }, 'OrthoFinder'));
+    list.push(el('span', { class: 'badge of', title: 'Listed as orthologs by OrthoFinder' }, 'OrthoFinder'));
   }
   if (sharedEntry) {
     list.push(el('span', {
-      class: 'badge pg', title: 'Same pan-gene entry (query genome frame)',
+      class: 'badge pg', title: 'Same pan-gene entry (query annotation as reference)',
     }, 'same entry'));
   }
   if (qcov !== null && qcov !== undefined && Math.min(qcov, tcov) < 50) {
@@ -272,7 +272,7 @@ function renderGene() {
   const entries = record.pg.length
     ? el("details", { class: "gene-groups" },
         el("summary", {}, `View ${memberships.length} group${memberships.length === 1 ? "" : "s"}`),
-        el("p", { class: "group-context" }, `${genomeLabel(genome)} reference frame. A group can contain multiple copies; membership is not a direct pairwise match.`),
+        el("p", { class: "group-context" }, `Reference annotation: ${genomeLabel(genome)}. A group can contain several copies; being in a group is not a direct pairwise match.`),
         el("div", { class: "group-buttons" }, memberships.map(([pg, flag]) => el("button", {
           type: "button", class: "entry-button", onclick: () => openEntry(genome, pg),
         }, el("strong", {}, `Group ${pg}`), el("span", {}, panGeneMemberLabel(flag)), el("span", { class: "group-action" }, "View members →")))))
@@ -396,8 +396,8 @@ function openPairDetails(genome, targetId) {
       details.push(
         row('Cross-chromosome synteny', blockList(cross, 'cross_synteny')),
         row('Cross-chromosome interpretation',
-          'A conserved gene-order relationship from the unrestricted run; it can reflect homeology '
-          + 'or structural differences and is not a confirmed ortholog or translocation call.'),
+          'Conserved gene order from the all-chromosome run. It can reflect homeology or structural '
+          + 'differences; it does not confirm an ortholog or a translocation.'),
       );
     }
     const groups = [...new Map(orthology.map(([id, og]) => [og, id])).entries()];
@@ -405,11 +405,11 @@ function openPairDetails(genome, targetId) {
       row('OrthoFinder', groups.length
         ? el('ul', {}, groups.map(([og, id]) => el('li', {},
             `orthogroup ${og} (pairwise row ${id} of run ${m.run})`)))
-        : 'not on opposite sides of any pairwise orthologue row'),
+        : 'OrthoFinder does not list them as orthologs'),
       row('Shared pan-gene entries', relation[r.shared_pgids].length
         ? `${relation[r.shared_pgids].map((pg) => `entry ${pg}`).join(', ')} `
-          + `in the ${genomeLabel(state.genome)} frame of run ${m.run}`
-        : "none in the query genome's frame"),
+          + `with ${genomeLabel(state.genome)} as reference annotation, run ${m.run}`
+        : "none with the query annotation as reference"),
     );
   } else if (hit) {
     details.push(row('Direct relations', 'none: not a recorded syntenic or OrthoFinder partner'));
@@ -437,7 +437,7 @@ function overviewRow(genome) {
     if (near.length) hints.push([`${near.length} near-equal`, `${near.length} other hit${near.length > 1 ? "s" : ""} within 95% of the best bit score`]);
     if (relations.length && !best[h.synteny] && !evidenceField(best, h, 'cross_synteny') && !best[h.orthofinder]) hints.push(["best hit not related", "The best hit has no synteny or OrthoFinder link; a related gene ranks lower"]);
   }
-  if (target[col.target.hit_cap_reached]) hints.push(["limit", "A search reported its maximum of 25 targets"]);
+  if (target[col.target.hit_cap_reached]) hints.push(["search list full", "The search list was full (25 matches)"]);
   const kinds = { both: 0, synteny: 0, orthofinder: 0, cross: 0 };
   for (const rel of relations) {
     if (evidenceField(rel, r, 'cross_synteny')) kinds.cross += 1;
@@ -454,7 +454,7 @@ function overviewRow(genome) {
                           onclick: (event) => { if (event.target.closest("a, button")) return; toggleExpanded(genome); } },
     el("td", { class: "genome-cell" },
       el("span", { class: "caret", "aria-hidden": "true" }, expanded ? "▾" : "▸"), " ", genomeLabel(genome),
-      genome === state.genome ? el("span", { class: "pill" }, "own") : null),
+      genome === state.genome ? el("span", { class: "pill" }, "query annotation") : null),
     best
       ? el("td", {}, geneLink(best[h.target_id], genome), el("div", { class: "small muted" }, `${fmt.loc(best[h.chromosome], best[h.start], best[h.end])} bp · ${fmt.pct(best[h.identity_pct])}% identity · ${fmt.bits(best[h.bitscore])} bits`))
       : el("td", { class: "muted" }, state.manifest.target_statuses[status] || status),
@@ -489,10 +489,10 @@ function targetHeader(genome) {
   const [status, reported, cap] = [target[col.target.status], target[col.target.reported_other_targets], target[col.target.hit_cap_reached]];
   const statusText = state.manifest.target_statuses[status] || status;
   return el("header", { class: "target-header" },
-    el("h3", {}, genomeLabel(genome), genome === state.genome ? el("span", { class: "pill" }, "own genome") : null),
+    el("h3", {}, genomeLabel(genome), genome === state.genome ? el("span", { class: "pill" }, "query annotation") : null),
     el("span", { class: "muted" },
       status === "hits" ? `${reported} candidate${reported === 1 ? "" : "s"}` : statusText,
-      cap ? el("span", { class: "badge cap", title: "At least one search hit its report limit; more similar genes may exist" }, "limit reached") : null));
+      cap ? el("span", { class: "badge cap", title: "The search list was full, so more similar genes may exist" }, "search list full") : null));
 }
 
 function hitsTable(genome) {
@@ -525,7 +525,7 @@ function hitsTable(genome) {
 function relatedTable(genome) {
   const r = col.relation, target = targetOf(genome);
   const relations = target[col.target.relations];
-  if (!relations.length) return el("p", { class: "muted empty" }, "No syntenic or OrthoFinder partner in this genome.");
+  if (!relations.length) return el("p", { class: "muted empty" }, "No syntenic or OrthoFinder partner in this annotation.");
   const rows = relations.map((rel) => {
     const rank = rel[r.hit_rank];
     const outside = rank === null || rank > state.top;
@@ -557,8 +557,161 @@ function relatedTable(genome) {
 
 function renderPerGenome(table) {
   const genomes = shownGenomes();
-  if (!genomes.length) return el("p", { class: "muted" }, "No genome selected.");
+  if (!genomes.length) return el("p", { class: "muted" }, "No annotation selected.");
   return genomes.map((genome) => el("article", { class: "target", "data-genome": genome }, targetHeader(genome), table(genome)));
+}
+
+// ---- Plain wording for flags and reasons ---------------------------------------------------------------
+
+// The data keep their own flag names and reason text, and downloads show them unchanged. The page shows these
+// instead. A flag without an entry falls back to the manifest text, a reason without a rule to its original text.
+const HOMEOLOG_CAVEAT = "Corresponding genes across annotations are selected using protein matches, OrthoFinder and "
+  + "synteny between chromosomes with the same number. Homeologs are predicted from protein similarity and chromosome "
+  + "groups. Cross-checked means that the query’s homeolog in its own annotation maps to the same candidate in another "
+  + "annotation, or, within the query annotation, the candidate’s best qualifying reverse match is the query. "
+  + "Cross-chromosome synteny is shown in Evidence and helps flag positions to verify. Homeolog predictions do not "
+  + "require direct synteny.";
+
+const FLAG_TEXT = {
+  no_protein_hit: "Chosen by synteny or OrthoFinder. No protein match to the query is stored.",
+  candidates_conflict: "Another gene looks better on some measure. It is named under Why. Check before relying on this pick.",
+  best_hit_unplaced: "No copy meeting the current rules was found on the expected chromosome, but a good match is on an "
+    + "unplaced sequence. It may be the missing copy, not yet assembled into a chromosome.",
+  near_identical_unconfirmed: "At least 99% identical to the query, with no second check in support. It may be a "
+    + "misplaced copy or the result of gene conversion.",
+  chosen_by_second_route: "Another gene scored slightly higher, but this one is within 5% and the check through the "
+    + "homeolog points to it.",
+  second_route_disagrees: "The check through the query's homeolog points to a different gene, named under Why.",
+  confirmed_by_partner: "The usual check gene could not be used here, often because of a fused or split gene model, so "
+    + "another partner of the homeolog was used.",
+  own_homeolog_unconfirmed: "The homeolog used for this check has no second check of its own.",
+  target_group_boundary: "The homeolog group for this gene is uncertain.",
+  hit_cap_reached: "The search keeps at most {max} matches per protein, and the list was full. None fell on this "
+    + "chromosome, so a copy here may have been cut off.",
+  position_conflict: "This gene, or a candidate left out of this cell, is on a chromosome that disagrees with other "
+    + "annotations. Its position needs checking.",
+};
+
+function flagText(flag) {
+  const text = FLAG_TEXT[flag];
+  return text ? text.replace("{max}", state.manifest.search_max_hits) : state.homeologManifest.flags[flag] || "";
+}
+
+// One rule per clause that step 07 writes (07_homeologs.py); a clause is what lies between "; " outside brackets.
+const VIA_HOMEOLOG = "The check through the query's homeolog points to";
+const REASON_RULES = [
+  [/^second route points to (\S+)$/, `${VIA_HOMEOLOG} a different gene: $1.`],
+  [/^second route points to (\S+), whose hit to the query was not stored \(a search reached its hit limit\)$/,
+    `${VIA_HOMEOLOG} $1, but no match to the query is stored. The search list was full, so the match may not have been reported.`],
+  [/^second route points to (\S+), which fails the homeolog thresholds here$/,
+    `${VIA_HOMEOLOG} $1, but its protein match is below 80% identity or 50% coverage.`],
+  [/^second route points to (\S+), which belongs to the other segment$/,
+    `${VIA_HOMEOLOG} $1, but that gene is on the other part of a composite chromosome.`],
+  [/^ortholog of the own-genome homeolog$/, "Found through the query's homeolog in the same annotation."],
+  [/^direct hit below 80% identity or 50% coverage$/, "The direct protein match is below 80% identity or 50% coverage."],
+  [/^no direct hit stored$/, "No direct protein match to the query is stored."],
+  [/^passing hit (\S+) on (\S+) belongs to group (G\d+) \(the other segment of that chromosome\)$/,
+    "$1 on $2 matches, but it lies on the other part of that composite chromosome (group $3)."],
+  [/^hits on (\S+) below 80% identity or 50% coverage$/, "Matches on $1 are below 80% identity or 50% coverage."],
+  [/^the only hits on (\S+) are genes in position conflict$/, "The only matches on $1 are genes whose position needs checking."],
+  [/^no hit on (\S+)$/, "No stored protein match on $1."],
+  [/^no hit in this genome$/, "No stored protein match in this annotation."],
+  [/^a homeolog-grade copy sits on unplaced sequence (\S+): (\S+) \(([\d.]+)% identity, coverage (\d+)\/(\d+); subgenome unknown\)$/,
+    "A good match is on an unplaced sequence: $2 on $1, $3% identity, coverage $4/$5. Its subgenome is unknown."],
+  [/^no syntenic, OrthoFinder or close \(>= 97% identity\) copy on (\S+)$/,
+    "No corresponding gene found on $1 under the current rules: no syntenic or OrthoFinder partner, and no stored copy at least 97% identical."],
+  [/^close copies only on (\S+)$/, (all, list) => `Copies at least 97% identical are only on ${list.replace(/,/g, ", ")}.`],
+  [/^partners only on (\S+)$/, (all, list) => `Syntenic or OrthoFinder partners are only on ${list.replace(/,/g, ", ")}.`],
+  [/^best copy on unplaced sequence (\S+): (\S+) \(([\d.]+)% identity, coverage (\d+)\/(\d+)\), possibly not assembled into a chromosome$/,
+    "The best copy is on an unplaced sequence: $2 on $1, $3% identity, coverage $4/$5. It may not have been assembled into a chromosome."],
+  [/^(\S+) has more evidence \(synteny and OrthoFinder\)$/, "$1 has more evidence: both synteny and OrthoFinder."],
+  [/^(\S+) is a complete near-identical copy \(([\d.]+)%\)$/, "$1 is a complete, near-identical copy ($2% identical)."],
+  [/^(\S+) is the syntenic anchor at this position$/, "$1 is the syntenic anchor at this position."],
+  [/^(\S+) is near-identical \(([\d.]+)%\) but the alignment covers only (\d+)% of the query: a fragment, or the query is a merged model$/,
+    "$1 is near-identical ($2%) but covers only $3% of the query. It may be a fragment, or the query may be two genes merged into one model."],
+  [/^(\S+) is near-identical \(([\d.]+)%\) but the alignment covers only (\d+)% of that gene: the query is a fragment, or that gene is a fused model$/,
+    "$1 is near-identical ($2%) but only $3% of it aligns. The query may be a fragment, or that gene may be a fused gene model."],
+  [/^(\S+) scores (\d+) bits against (\d+)$/, "$1 has a much higher score: $2 bits against $3."],
+];
+
+// A gene's position sentence from step 07. leftOut: the gene was set aside from this cell.
+function plainPosition(text, leftOut) {
+  const stretch = text.match(/^(\S+) sits on (\S+) in this assembly, inside a stretch \(([\d.]+)-([\d.]+) Mb\) where (\d+) of (\d+) genes are in position conflict by their own vote toward (\S+)$/);
+  const vote = text.match(/^(\S+) sits on (\S+) in this assembly, but in (\d+) of (\d+) genomes( each)? its synteny points to (.+)$/);
+  const found = stretch || vote;
+  if (!found) return null;
+  const opening = `${found[1]} ${leftOut ? "was left out: it is" : "is"} on ${found[2]} here`;
+  if (stretch) return `${opening}, in a ${stretch[3]}–${stretch[4]} Mb region where ${stretch[5]} of ${stretch[6]} genes point to ${stretch[7]}.`;
+  return vote[5] ? `${opening}, but its syntenic partners point to ${vote[6]}, ${vote[3]} of ${vote[4]} annotations each.`
+    : `${opening}, but ${vote[3]} of ${vote[4]} annotations place its syntenic partner on ${vote[6]}.`;
+}
+
+function plainClause(clause, leftOut) {
+  const toVerify = clause.endsWith(": position to verify");
+  const position = plainPosition(clause.replace(/: position to verify$/, ""), leftOut);
+  if (position) return toVerify ? `${position} Its position needs checking.` : position;
+  for (const [rule, text] of REASON_RULES) if (rule.test(clause)) return clause.replace(rule, text);
+  return clause;
+}
+
+// Splits at "; " outside brackets, so "(90% identity, coverage 80/80; subgenome unknown)" stays whole.
+function reasonClauses(text) {
+  const clauses = [];
+  let depth = 0, start = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "(") depth++;
+    else if (text[i] === ")") depth--;
+    else if (depth === 0 && text.startsWith("; ", i)) {
+      clauses.push(text.slice(start, i));
+      start = i + 2;
+    }
+  }
+  clauses.push(text.slice(start));
+  return clauses;
+}
+
+// A cell's reason in plain sentences; "" when it has none.
+function plainReason(reason) {
+  if (!reason) return "";
+  const sentences = [];
+  let leftOut = false;
+  for (let clause of reasonClauses(reason)) {
+    if (clause.startsWith("check: ")) {
+      sentences.push("Another gene may be the better pick.");
+      clause = clause.slice("check: ".length);
+    } else if (clause.startsWith("left out: ")) {
+      leftOut = true;
+      clause = clause.slice("left out: ".length);
+    }
+    sentences.push(plainClause(clause, leftOut));
+  }
+  return sentences.join(" ");
+}
+
+const OWN_VOTE_RULES = [
+  [/^its own vote was not taken \(cross-chromosome partners in fewer than (\d+) genomes\)$/,
+    "It has cross-chromosome partners in fewer than $1 annotations, too few to judge on its own."],
+  [/^its own synteny gives no vote$/, "Its own synteny gives no answer."],
+  [/^its own vote: (.+) of (\d+) genomes$/, "On its own: $1 of $2 annotations."],
+];
+
+// A position-conflict note in plain sentences; other notes are short and stay as they are.
+function plainNote(note) {
+  if (!note) return "";
+  const vote = note.match(/^position conflicts with synteny: on (\S+) here, but in (\d+) of (\d+) genomes( each)? the synteny points to (.+); subgenome to verify$/);
+  if (vote) {
+    return `This gene is on ${vote[1]} here, but ${vote[4]
+      ? `its syntenic partners point to ${vote[5]}, ${vote[2]} of ${vote[3]} annotations each`
+      : `${vote[2]} of ${vote[3]} annotations place its syntenic partner on ${vote[5]}`}. Its position and subgenome need checking.`;
+  }
+  const stretch = note.match(/^position conflicts with synteny: on (\S+) here, inside a conflict stretch \(([\d.]+)-([\d.]+) Mb\) where (\d+) of (\d+) genes are in position conflict by their own vote toward (\S+); (.+); subgenome to verify$/);
+  if (stretch) {
+    const rule = OWN_VOTE_RULES.find(([pattern]) => pattern.test(stretch[7]));
+    const own = rule ? stretch[7].replace(...rule) : stretch[7];
+    return `This gene is on ${stretch[1]} here, in a ${stretch[2]}–${stretch[3]} Mb region where ${stretch[4]} of ${stretch[5]} genes `
+      + `point to ${stretch[6]}. ${own} Its position and subgenome need checking.`;
+  }
+  return note;
 }
 
 // ---- Homeologs ---------------------------------------------------------------------------------------
@@ -573,38 +726,38 @@ function cellEvidence(cell) {
              sequence: "sequence only (≥ 97% identity)" }[evidence] || evidence;
   }
   if (stateName === "confirmed" && cell[c.flags].includes("confirmed_by_partner")) return "partner supported";
-  return { confirmed: "two routes agree", sequence_only: "sequence only", ambiguous: "sequence only, near-equal candidates",
-           via_own_homeolog: "via own homeolog" }[stateName] || stateName;
+  return { confirmed: "cross-checked", sequence_only: "sequence only", ambiguous: "sequence only, near-equal candidates",
+           via_own_homeolog: "found via homeolog" }[stateName] || stateName;
 }
 
 function cellEvidenceDescription(cell, genome) {
   const c = col.cell, role = cell[c.role], stateName = cell[c.state], flags = cell[c.flags];
   if (stateName === "self") return "This is the query gene itself.";
-  if (isToVerify(cell)) return "This is a candidate whose position or subgenome needs review. It is not a confirmed ortholog or homeolog. " + (cell[c.reason] || "Inspect its pairwise evidence and the position-conflict notice.");
+  if (isToVerify(cell)) return "This is a candidate only: its position or subgenome needs checking, so it is not a confirmed corresponding gene or homeolog. " + (plainReason(cell[c.reason]) || "See its pairwise evidence and the position notice.");
   if (role === "ortholog") {
     return {
-      "synteny+orthofinder": "This pair has both a direct conserved gene-order relationship and an OrthoFinder pairwise link. Together they provide computational support, not experimental confirmation.",
-      synteny: "This pair has a direct conserved gene-order relationship. No OrthoFinder pairwise link was recorded for this pair.",
-      orthofinder: "OrthoFinder links these genes. No direct syntenic relationship was recorded for this pair.",
-      sequence: "A close protein match was selected without a direct syntenic or OrthoFinder link for this pair.",
+      "synteny+orthofinder": "These genes sit in conserved gene order, and OrthoFinder also links them. This is computational support, not experimental proof.",
+      synteny: "These genes sit in conserved gene order. No OrthoFinder link was recorded.",
+      orthofinder: "OrthoFinder links these genes, but this analysis found no direct conserved gene order between them.",
+      sequence: "A close protein match, with no direct synteny or OrthoFinder link recorded.",
     }[cell[c.evidence]] || "Open the details to inspect the evidence for this candidate.";
   }
   if (stateName === "confirmed") {
     let explanation;
     if (flags.includes("confirmed_by_partner")) {
-      explanation = "This protein-match candidate is a syntenic or OrthoFinder partner of the query's within-annotation homeolog. Its preferred mapped gene could not be used.";
+      explanation = "The usual check gene could not be used here, so this gene was checked through another syntenic or OrthoFinder partner of the query's homeolog.";
     } else if (genome === state.genome) {
-      explanation = "Route 1 selects this protein-match candidate for the other subgenome. Route 2 checks that this candidate's best qualifying reverse match is the query gene.";
+      explanation = "This gene is the best match on the other subgenome, and its own best match back is the query gene.";
     } else {
-      explanation = "Route 1 matches the query protein directly to this gene. Route 2 maps the query's within-annotation homeolog to the same gene in this annotation.";
+      explanation = "The direct protein match and the check through the query's homeolog in the same annotation both point to this gene.";
     }
-    if (flags.includes("own_homeolog_unconfirmed")) explanation += " The intermediate homeolog is itself unconfirmed.";
-    return explanation + " These checks share input evidence; agreement is not independent or experimental validation.";
+    if (flags.includes("own_homeolog_unconfirmed")) explanation += " The homeolog used for this check is itself unconfirmed.";
+    return explanation + " The two checks share input data, so this is not independent or experimental proof.";
   }
   return {
-    sequence_only: "This candidate meets the protein identity and coverage criteria on the expected subgenome chromosome. No agreeing second route was available.",
-    ambiguous: "Several protein matches have similar alignment scores. The displayed gene is one candidate; inspect the alternatives before choosing.",
-    via_own_homeolog: "The direct protein match is weak or missing. This candidate is inferred by mapping the query's within-annotation homeolog to this annotation.",
+    sequence_only: "This gene passes the protein identity and coverage limits on the expected chromosome, but no second check supports it.",
+    ambiguous: "Several genes match almost equally well. This is one of them; compare the others before choosing.",
+    via_own_homeolog: "The direct protein match is weak or missing, so this gene was found through the query's homeolog in the same annotation.",
   }[stateName] || "Open the details to inspect how this candidate was selected.";
 }
 
@@ -626,7 +779,8 @@ function openCellDetails(genome, sg, cell) {
   } else {
     details.push(row("Result", `not found under the current rules (${sg} copy in ${genomeLabel(genome)})`));
   }
-  if (cell[c.reason]) details.push(row("Why", cell[c.reason]));
+  // For a candidate to verify, "What this means" already gives the reason.
+  if (cell[c.reason] && !isToVerify(cell)) details.push(row("Why", plainReason(cell[c.reason])));
   if (cell[c.gene_id]) {
     const direct = pairDetails(genome, cell[c.gene_id]);
     if (direct.hit || direct.relation) details.push(row("Pairwise evidence",
@@ -639,7 +793,8 @@ function openCellDetails(genome, sg, cell) {
       el("li", {}, geneLink(id, genome), bits === null ? " (no stored hit)" : ` (${fmt.bits(bits)} bits)`)),
       cell[c.n_alternatives] > cell[c.alternatives].length ? el("li", { class: "muted" }, `… and ${cell[c.n_alternatives] - cell[c.alternatives].length} more`) : null)));
   }
-  if (flags.length) details.push(row("Flags", el("ul", {}, flags.map((f) => el("li", {}, el("code", {}, f), ": ", hm.flags[f] || "")))));
+  // The flag's own name stays visible in small print: it is what downloaded tables show.
+  if (flags.length) details.push(row("Flags", el("ul", {}, flags.map((f) => el("li", {}, flagText(f), " ", el("code", { class: "flag-key" }, f))))));
   details.push(row("See also", el("span", {},
     detailsButton(`all hits and related genes in ${genomeLabel(genome)}`, () => { $("#dialog").close(); showGenomeDetails(genome); }),
     " — including hits on other chromosomes and unplaced sequences.")));
@@ -668,7 +823,7 @@ function homeologCell(cell, genome, sg, alreadyNamed = null) {
       el("div", { class: "hmeta" },
         showUnplaced ? el("span", {}, "copy on unplaced sequence: ", geneLink(unplaced[0], genome), " ") : null,
         unplaced && !showUnplaced ? el("span", { class: "muted" }, "same unplaced copy ") : null,
-        flags.includes("hit_cap_reached") ? el("span", { class: "badge cap", title: "A search hit its report limit" }, "limit ") : null,
+        flags.includes("hit_cap_reached") ? el("span", { class: "badge cap", title: "The search list was full" }, "search list full ") : null,
         detailsButton("why?", open)));
   }
   const check = flags.includes("candidates_conflict") || flags.includes("near_identical_unconfirmed") || flags.includes("second_route_disagrees") || flags.includes("position_conflict");
@@ -689,7 +844,7 @@ function homeologCell(cell, genome, sg, alreadyNamed = null) {
         onkeydown: (event) => { if (event.key === "Escape") hideEvidenceTooltip(); },
         onclick: open,
       }, cellEvidence(cell)),
-      check ? el("span", { class: "badge partial", title: cell[c.reason] || "Check this pick" }, " check") : null,
+      check ? el("span", { class: "badge partial", title: plainReason(cell[c.reason]) || "Check this pick" }, " check") : null,
       cell[c.n_alternatives] ? el("button", { type: "button", class: "link-button", onclick: open },
         `+${cell[c.n_alternatives]} candidate${cell[c.n_alternatives] > 1 ? "s" : ""}`) : null,
       detailsButton("details", open)));
@@ -701,28 +856,28 @@ function positionReviewNotice(homeologs) {
   const row = (label, value) => el('div', { class: 'detail-row' },
     el('dt', {}, label), el('dd', {}, value));
   const votes = conflict.votes === null
-    ? 'Not taken: too few cross-chromosome partners'
-    : Object.entries(conflict.votes || {}).map(([chr, count]) => `${chr}: ${count}`).join('; ') || 'No votes';
+    ? 'Not counted: cross-chromosome partners in fewer than 3 annotations'
+    : Object.entries(conflict.votes || {}).map(([chr, count]) => `${chr}: ${count}`).join('; ') || 'No result';
   const evidence = (conflict.tied || [conflict.evidence]).filter(Boolean).join(' / ');
   const stretch = conflict.stretch;
   // Review boundaries describe supporting context, not a corrected assembly.
   return el('article', { class: 'position-review target' },
     el('h3', {}, 'Position / subgenome to verify'),
-    el('p', {}, 'The original assembly location is retained. Candidates below are not assigned to a definite '
-      + 'subgenome and are not confirmed orthologs or homeologs.'),
+    el('p', {}, 'This gene keeps its original position. The genes below are candidates only: they have no assigned '
+      + 'subgenome and are not confirmed.'),
     el('dl', { class: 'details' },
       row('Original location', `${fmt.loc(state.record.chr, state.record.s, state.record.e)} bp`),
-      // 网页统一叫 Gene vote / Region context；数据里 basis 的值仍是 vote / stretch
-      // The site says Gene vote / Region context; the data's basis values stay vote / stretch
-      row('Review basis', conflict.basis === 'stretch'
-        ? 'Region context: inside a run of gene-vote genes' : 'Gene vote: this gene’s own votes across annotations'),
-      row('Candidate chromosome correspondence', evidence || 'Not settled'),
-      row('This gene’s votes', votes),
-      stretch ? row('Flagged region', `${fmt.loc(state.record.chr, stretch.start, stretch.end)} bp; `
-        + `${fmt.int(stretch.conflict_genes)} of ${fmt.int(stretch.genes)} genes in it are flagged by gene vote `
-        + `toward ${stretch.evidence}. These are review boundaries, not validated rearrangement breakpoints.`) : null),
-    el('details', {}, el('summary', {}, 'How this review flag was assigned'),
-      el('p', { class: 'muted small' }, homeologs.note || 'Inspect the underlying pairwise evidence.')));
+      // The page describes the two cases in words; the data's basis values stay vote / stretch
+      row('Why it is flagged', conflict.basis === 'stretch'
+        ? 'Nearby genes: many genes around it point to another chromosome, so it is flagged with them.'
+        : 'This gene: among other annotations that have a syntenic partner for it, most place that partner on a different chromosome.'),
+      row('Chromosome suggested by other annotations', evidence || 'Not settled'),
+      row('Where other annotations place it', votes),
+      stretch ? row('Flagged region', `${fmt.loc(state.record.chr, stretch.start, stretch.end)} bp. `
+        + `Here ${fmt.int(stretch.conflict_genes)} of ${fmt.int(stretch.genes)} genes point to ${stretch.evidence}. `
+        + 'These limits mark what to check; they are not proven rearrangement breakpoints.') : null),
+    el('details', {}, el('summary', {}, 'How this gene was flagged'),
+      el('p', { class: 'muted small' }, plainNote(homeologs.note) || 'Inspect the underlying pairwise evidence.')));
 }
 
 function positionCandidateTable(homeologs, genome) {
@@ -787,10 +942,10 @@ async function renderHomeologs(container) {
   const slots = hm.homeolog_groups[homeologs.group];
   const genomes = hm.target_genomes;
   const callNote = { fixed: "", window: " (group set by its neighbourhood on this composite chromosome)",
-                     boundary: " (near a group boundary on this composite chromosome; less certain)" }[homeologs.group_call];
+                     boundary: " (its homeolog group on this composite chromosome is uncertain)" }[homeologs.group_call];
   container.replaceChildren(...[
     homeologs.genomes_with_ortholog === 0
-      ? el("p", { class: "message" }, "No corresponding gene was identified in another genome under the current rules, so most cells are expected to be empty.") : null,
+      ? el("p", { class: "message" }, "No corresponding gene was identified in another annotation under the current rules, so most cells are expected to be empty.") : null,
     el("p", { class: "homeolog-lead" }, "The highlighted ", el("strong", {}, `${homeologs.sg} column`),
       " is the query's own subgenome: the gene that corresponds to the query in each annotation. "
       + "The other two columns are its homeologs on the other subgenomes."),
@@ -831,7 +986,7 @@ async function renderHomeologs(container) {
     // The site states the sources itself: the published manifest's old Kagale wording changes only when step 07 is
     // run again and published
     el("p", { class: "muted small" }, `Each cell: gene · identity · coverage of the query / of that gene · evidence · near-equal candidates. `
-      + `Subgenome names: ${SUBGENOME_SOURCES}. ${hm.caveats[0]}`),
+      + `Subgenome names: ${SUBGENOME_SOURCES}. ${HOMEOLOG_CAVEAT}`),
   ].filter(Boolean));
   state.homeologs = homeologs;
 }
@@ -1013,7 +1168,8 @@ async function renderTranscriptAlignment(container) {
       slotControl = el("div", { class: "alignment-slot" }, el("label", { for: "alignment-subgenome" }, "Compare copies in"), chooser);
     }
     const noGroupNote = hasGroup ? null : el("p", { class: "muted small" },
-      `No subgenome group was assigned (${homeologs.note || "not assigned"}).`);
+      homeologs.position_conflict ? `No subgenome group was assigned. ${plainNote(homeologs.note)}`
+        : `No subgenome group was assigned (${homeologs.note || "not assigned"}).`);
     container.replaceChildren(...[slotControl, noGroupNote, content].filter(Boolean));
     let picker;
     picker = window.AlignmentSelection.render(content, {
@@ -1052,9 +1208,9 @@ async function renderTranscriptAlignment(container) {
           const details = member.gene_id ? pairDetails(member.genome, member.gene_id) : {};
           if (details.hit || details.relation) openPairDetails(member.genome, member.gene_id);
           else openDialog(el("h2", {}, member.gene_id || member.genome),
-            el("p", {}, member.gene_id ? "The query gene's annotated transcripts." : member.reason));
+            el("p", {}, member.gene_id ? "The query gene's annotated transcripts." : plainReason(member.reason)));
           if (member.candidate_source === "sequence_alternative") $("#dialog-body").append(el("p", { class: "note" },
-            "This candidate is selected for alignment only. ", member.homeolog_reason ? `Original Homeologs slot: ${member.homeolog_reason}` : "No subgenome assignment was recorded."));
+            "This candidate is selected for alignment only. ", member.homeolog_reason ? `In the Homeologs view: ${plainReason(member.homeolog_reason)}` : "No subgenome assignment was recorded."));
         }
       },
     });
@@ -1091,7 +1247,7 @@ async function openEntry(frame, pg) {
     const annotations = new Set(members.map((row) => row[m.genome])).size;
     openDialog(
       el("h2", {}, `Pan-gene group ${pg}`),
-      el("p", { class: "group-summary" }, `${members.length} members across ${annotations} annotation${annotations === 1 ? "" : "s"} · ${frame} reference frame`),
+      el("p", { class: "group-summary" }, `${members.length} members across ${annotations} annotation${annotations === 1 ? "" : "s"} · reference annotation ${frame}`),
       el("p", { class: "muted small" }, "Standard member is a GENESPACE membership category, not a confidence score. Added via orthology means linked to the group's representative by OrthoFinder; it does not imply a direct match to every member."),
       el("div", { class: "table-wrap" }, el("table", {},
         el("thead", {}, el("tr", {}, ["Annotation", "Gene", "Chromosome", "Membership"].map((t) => el("th", {}, t)))),
@@ -1102,7 +1258,7 @@ async function openEntry(frame, pg) {
           el("td", {}, panGeneMemberLabel(row[m.flag]))))))),
       el("details", { class: "group-technical" },
         el("summary", {}, "Technical details"),
-        el("p", { class: "muted small" }, `Run ${state.manifest.run} · frame ${frame} · pgID ${pg}. Cite this combination; group numbers differ between frames. Interpolated positions use gene order, not base pairs.`),
+        el("p", { class: "muted small" }, `Run ${state.manifest.run} · reference annotation ${frame} · pgID ${pg}. Cite this combination; group numbers differ between reference annotations. Interpolated positions use gene order, not base pairs.`),
         el("div", { class: "table-wrap" }, el("table", {},
           el("thead", {}, el("tr", {}, ["Annotation", "Gene", "Original flag", "Interpolated chromosome", "Gene-order position"].map((t) => el("th", {}, t)))),
           el("tbody", {}, orderedMembers.map((row) => el("tr", { class: isQuery(row) ? "query-member" : null },
@@ -1555,7 +1711,7 @@ async function renderAnnotationSources() {
         el("td", { class: "num", "data-label": "To verify" }, int(a.to_verify),
           // 网页统一叫 Gene vote / Region context（下载表格里 basis 仍是 vote / stretch）
           // The site says Gene vote / Region context (the downloaded tables keep basis vote / stretch)
-          el("small", {}, `${int(a.to_verify_own_evidence)} vote · ${int(a.to_verify_stretch_context)} region`)),
+          el("small", {}, `${int(a.to_verify_own_evidence)} by gene · ${int(a.to_verify_stretch_context)} by region`)),
         el("td", { class: "num ann-busco", "data-label": "BUSCO C" }, pct(b.C)),
         el("td", { class: "num ann-busco", "data-label": "BUSCO M" }, pct(b.M)),
         el("td", { class: "ann-toggle-cell" },
@@ -1601,8 +1757,8 @@ async function renderAnnotationSources() {
             el("dt", {}, "Not in an orthogroup"),
             el("dd", {}, `${int(a.unassigned)} of ${int(a.analysed)} analysed genes (${share(a.unassigned, a.analysed)})`),
             el("dt", {}, "Position to verify"),
-            el("dd", {}, `${int(a.to_verify)}: ${int(a.to_verify_own_evidence)} by gene vote, `
-              + `${int(a.to_verify_stretch_context)} by region context`))));
+            el("dd", {}, `${int(a.to_verify)}: ${int(a.to_verify_own_evidence)} by gene, `
+              + `${int(a.to_verify_stretch_context)} by region`))));
       return [row, detail];
     }));
   });
@@ -1621,17 +1777,10 @@ async function renderAnnotationSources() {
     ["Not in an orthogroup", "Analysed genes (on Chr01–Chr20 with a usable protein) that this OrthoFinder run placed in no "
       + "orthogroup, with their share of the analysed genes. This does not mean that other annotations lack similar "
       + "sequences, and it is not by itself evidence of a wrong gene model."],
-    // 规则与第 07 步一致（CONFLICT_MIN_VOTES 3、CONFLICT_MIN_IDENTITY 99、覆盖 80、STRETCH_MAX_GAP 20、STRETCH_MIN_SHARE 0.5）
-    // Rules as in step 07 (CONFLICT_MIN_VOTES 3, identity 99, coverage 80, STRETCH_MAX_GAP 20, STRETCH_MIN_SHARE 0.5)
-    ["Position to verify", "Genes whose chromosome disagrees with the other annotations. Gene vote (vote): each other "
-      + "annotation votes for the chromosome of the gene's best syntenic counterpart there, a counterpart on another "
-      + "chromosome counting only at ≥99% identity and ≥80% coverage; the gene is flagged when more than half of the "
-      + "votes go to other chromosomes, at least 3 to the same one. Region context (region): genes within a run of such "
-      + "genes (at least 3 toward the same chromosome, at most 20 genes apart, at least half of the genes in the run) "
-      + "are flagged with the run, whatever their own vote. A flag asks for a check; it does not prove the position "
-      + "wrong. The assembly may be misjoined, the accession may carry a real rearrangement, or the annotations that "
-      + "disagree may share one layout (11 JGI assemblies were ordered on Prytzh). Downloaded tables call the two "
-      + "bases vote and stretch."],
+    ["Position to verify", "Genes whose chromosome disagrees with the other annotations, either the gene itself or the "
+      + "genes around it (rules in Data and methods). A flag asks for a check; it does not prove the position wrong. The "
+      + "assembly may be misjoined, the accession may carry a real rearrangement, or the annotations that disagree may "
+      + "share one layout (11 JGI assemblies were ordered on Prytzh)."],
     ["BUSCO", `BUSCO ${data.busco.version} in protein mode with ${data.busco.lineage} (${int(data.busco.markers)} conserved `
       + "genes), one representative protein per gene, the same for every annotation. C complete, M missing; Details add "
       + "S single-copy, D duplicated, F fragmented and the number of complete copies. In this hexaploid a high D is "
@@ -1758,13 +1907,15 @@ function openDataMethods(homeologNote) {
   openDialog(
     el("h2", {}, "Data and methods"),
     el("ul", { class: "method-notes" }, [
-      "Transcript and protein identifiers present in the indexed source annotations resolve to their parent genes. Protein comparisons use one representative protein sequence per gene.",
+      "A transcript or protein ID finds its parent gene. Protein comparisons use one representative protein per gene.",
       `Protein hits are ranked by bit score. Each search reports up to ${m.search_max_hits} targets; supplementary searches may add further candidates.`,
       "Related genes includes all stored syntenic and OrthoFinder partners, including those outside the displayed top hits.",
       syntenyRun("cross_synteny") ? "Same-chromosome synteny and cross-chromosome synteny are reported separately with their source runs. Cross-chromosome relationships do not by themselves establish orthology or translocation. Shared pan-gene membership is not direct pairwise synteny." : "Direct synteny was evaluated between same-numbered chromosomes. Shared pan-gene membership does not imply direct synteny between every pair of members.",
-      "Position-to-verify records retain the original assembly location. Gene-vote and region-context flags have different evidence bases; neither is a validated assembly correction.",
+      "Genes flagged to verify keep their original position. The flag asks for a check; it does not correct the assembly.",
+      // Rules as in step 07 (CONFLICT_MIN_VOTES 3, identity 99, coverage 80, STRETCH_MAX_GAP 20, STRETCH_MIN_SHARE 0.5)
+      "To verify, by gene: each other annotation votes for the chromosome of the gene's best syntenic partner there; a partner on another chromosome counts only at ≥99% identity and ≥80% coverage. The gene is flagged when more than half of the votes go to other chromosomes, at least 3 to the same one. To verify, by region: a gene inside a run of such genes (at least 3 toward the same chromosome, at most 20 genes apart, at least half of the genes in the run) is flagged with the run, whatever its own result. Downloaded tables write these two cases as vote and stretch.",
       "Consider sequence identity and coverage together. A short, high-identity match requires review of the gene models.",
-      "Homeolog assignments are computational predictions. Two routes agree means that a protein-match candidate is supported by a reverse-match check or by mapping through the query's within-annotation homeolog. This is not independent validation. A missing match does not establish biological absence.",
+      "Homeolog assignments are computational predictions. Cross-checked means the protein match agrees with a second check: a reverse match within the annotation, or a path through the query's homeolog in the same annotation. The two checks share input data, so this is not independent validation. A missing match does not prove that a gene is absent.",
     ].map((note) => el("li", {}, note))),
     el("details", { class: "group-technical data-provenance" },
       el("summary", {}, "Data version details"),
@@ -1903,7 +2054,7 @@ function openAbout() {
   const view = (name, text) => el("div", { class: "detail-row" }, el("dt", {}, name), el("dd", {}, text));
   openDialog(
     el("h2", {}, "About this database"),
-    el("p", { class: "dialog-lead" }, "Look up a gene, transcript or protein ID from any Camelina sativa annotation in this release. For every annotation the page shows the gene's candidate counterparts, its predicted copies on the three subgenomes, and the evidence behind each one."),
+    el("p", { class: "dialog-lead" }, "Look up a gene, transcript or protein ID from any Camelina sativa annotation in this release. For every annotation the page shows the gene's likely corresponding genes, its predicted copies on the three subgenomes, and the evidence behind each one."),
     el("h3", {}, "What the page shows"),
     el("dl", { class: "details" },
       view("Homeologs", "The query's copies on SG1, SG2 and SG3 in every annotation. The highlighted column is the copy that corresponds to the query."),
@@ -1949,10 +2100,10 @@ function openDataInfo() {
     el("h3", {}, "What the dataset holds"),
     el("ul", { class: "folder-list" },
       folder("web/", "Gene records, the ID index and every pairwise relation (hits, synteny, OrthoFinder)"),
-      folder("homeologs/", "Subgenome copies, group calls and the position-review candidates"),
+      folder("homeologs/", "Subgenome copies, group calls and the genes to verify"),
       folder("sequences/", "Protein and CDS of every annotated transcript"),
       CONFIG.functionBase ? folder("function/", "Functional annotation: each transcript's tool results and per-annotation tables") : null,
-      folder("tables/pangenes/", "GENESPACE pan-gene tables, one per reference frame"),
+      folder("tables/pangenes/", "GENESPACE pan-gene tables, one per reference annotation"),
       folder("query/", "The complete SQLite database, with R and Python examples")),
     el("h3", {}, "Downloads"),
     el("ul", { class: "download-grid dialog-downloads" }, ...downloadTiles()),
@@ -2155,6 +2306,7 @@ function setEvidenceList(list) {
 // in them; ZH_HTML: the index.html paragraphs that carry a data-i18n key.
 // 嵌套部分先查表，没有就保留英文 / a nested part is looked up first, else its English stays
 const zhPart = (text) => I18N.lookup(text) || text;
+const zhSubject = (gene, verb) => `${gene === "This gene" ? "这个基因" : `${gene} `}${verb === "is" ? "" : "被排除了：它"}`;
 
 const ZH_TEXT = {
   // 顶栏、首页 / top bar and start page
@@ -2165,11 +2317,11 @@ const ZH_TEXT = {
   "Camelina sativa · allohexaploid oilseed · 20 chromosomes · three subgenomes": "亚麻荠 Camelina sativa · 异源六倍体油料作物 · 20 条染色体 · 三个亚基因组",
   "Gene correspondence, homeologs and functional annotation across 18 annotations of 14 accessions.":
     "14 个品种 18 套注释中的基因对应关系、部分同源基因与功能注释。",
-  "Gene, transcript or protein ID": "基因、转录本或蛋白 ID", "Genome": "基因组", "any genome": "任意基因组",
+  "Gene, transcript or protein ID": "基因、转录本或蛋白 ID", "Genome": "基因组", "any annotation": "任意注释",
   "Look up": "查询", "Try": "试试", "One example per annotation": "每套注释一个例子",
   "Loading data description…": "正在载入数据说明…",
   "Gene, transcript or protein ID, e.g. CsPrytzh.01G000100": "基因、转录本或蛋白 ID，例如 CsPrytzh.01G000100",
-  "Only needed when an ID exists in several genomes": "只有同一个 ID 出现在多个基因组里时才需要选",
+  "Only needed when an ID exists in several annotations": "只有同一个 ID 出现在多套注释里时才需要选",
   "Looking up…": "正在查询…", "Loading…": "正在载入…",
   "annotations": "套注释", "accessions": "个品种", "genes per annotation": "每套注释的基因数", "gene families": "个基因家族",
   "searchable IDs": "可查询的 ID",
@@ -2180,8 +2332,8 @@ const ZH_TEXT = {
   "Ranked protein hits, GENESPACE synteny and OrthoFinder orthology for each annotation, with the evidence and alignment metrics behind every pair.":
     "每套注释中的蛋白命中排名、GENESPACE 共线性和 OrthoFinder 直系同源，并给出每一对背后的证据和比对指标。",
   "Three subgenome copies": "三个亚基因组拷贝",
-  "Predicted SG1, SG2 and SG3 copies in every genome. Genes whose position conflicts with the evidence are flagged":
-    "每个基因组中预测的 SG1、SG2、SG3 拷贝。位置与证据冲突的基因会标为",
+  "Predicted SG1, SG2 and SG3 copies in every annotation. Genes whose position conflicts with the evidence are flagged":
+    "每套注释中预测的 SG1、SG2、SG3 拷贝。位置与证据冲突的基因会标为",
   ", never silently reassigned.": "，不会被悄悄改派。",
   "Sequences and alignment": "序列与比对",
   "Protein and CDS of every annotated transcript, aligned in your browser with Kalign, with FASTA and table downloads.":
@@ -2201,8 +2353,8 @@ const ZH_TEXT = {
   // 下载项说明（config.js）/ download labels (config.js)
   "All genes with their IDs, positions and status": "全部基因及其 ID、位置和状态",
   "Related genes per query annotation: pairwise evidence and alignment metrics": "按查询注释分的相关基因：成对证据和比对指标",
-  "Predicted SG1/SG2/SG3 copies, group assignments and position-conflict review candidates": "预测的 SG1/SG2/SG3 拷贝、组别指派和位置冲突的待查候选",
-  "GENESPACE pan-gene tables, one per reference frame": "GENESPACE 泛基因表，每个参考框架一张",
+  "Predicted SG1/SG2/SG3 copies, group assignments and genes to verify": "预测的 SG1/SG2/SG3 拷贝、组别指派和待核实的基因",
+  "GENESPACE pan-gene tables, one per reference annotation": "GENESPACE 泛基因表，每个参考注释一张",
   "All-transcript catalog, protein/CDS shards and their sequence index": "全部转录本目录、蛋白 / CDS 分片及其序列索引",
   "Functional annotation per annotation: gene and transcript tables (best Arabidopsis, Swiss-Prot and RefSeq hits, eggNOG, KO, GO, InterPro, Pfam, PANTHER) and GO/KEGG enrichment files":
     "每套注释的功能注释：基因表和转录本表（拟南芥、Swiss-Prot、RefSeq 最佳命中，eggNOG、KO、GO、InterPro、Pfam、PANTHER）以及 GO / KEGG 富集文件",
@@ -2217,7 +2369,7 @@ const ZH_TEXT = {
   "Homeolog predictions are currently unavailable.": "部分同源预测暂时不可用。",
   // "关于"和"数据"弹窗 / About and Data panels
   "About this database": "关于本数据库",
-  "Look up a gene, transcript or protein ID from any Camelina sativa annotation in this release. For every annotation the page shows the gene's candidate counterparts, its predicted copies on the three subgenomes, and the evidence behind each one.":
+  "Look up a gene, transcript or protein ID from any Camelina sativa annotation in this release. For every annotation the page shows the gene's likely corresponding genes, its predicted copies on the three subgenomes, and the evidence behind each one.":
     "输入这一版中任一套亚麻荠注释里的基因、转录本或蛋白 ID。页面会在每套注释中给出这个基因的候选对应基因、它在三个亚基因组上的预测拷贝，以及每一个背后的证据。",
   "What the page shows": "页面能看什么",
   "The query's copies on SG1, SG2 and SG3 in every annotation. The highlighted column is the copy that corresponds to the query.":
@@ -2255,7 +2407,7 @@ const ZH_TEXT = {
   "Source database SHA-256": "源数据库 SHA-256", "Open this release on Hugging Face": "在 Hugging Face 上打开这一版",
   "What the dataset holds": "数据集里有什么",
   "Gene records, the ID index and every pairwise relation (hits, synteny, OrthoFinder)": "基因记录、ID 索引和全部成对关系（命中、共线性、OrthoFinder）",
-  "Subgenome copies, group calls and the position-review candidates": "亚基因组拷贝、组别判定和位置待查候选",
+  "Subgenome copies, group calls and the genes to verify": "亚基因组拷贝、组别判定和待核实的基因",
   "Protein and CDS of every annotated transcript": "每个注释转录本的蛋白和 CDS",
   "Functional annotation: each transcript's tool results and per-annotation tables": "功能注释：每个转录本的工具结果和每套注释的表格",
   "The complete SQLite database, with R and Python examples": "完整的 SQLite 数据库，附 R 和 Python 示例",
@@ -2263,20 +2415,22 @@ const ZH_TEXT = {
   "The same 18 annotations, without the functional annotation": "同样的 18 套注释，没有功能注释",
   "The first release, 15 annotations": "第一版，15 套注释",
   // 方法弹窗 / Methods dialog
-  "Transcript and protein identifiers present in the indexed source annotations resolve to their parent genes. Protein comparisons use one representative protein sequence per gene.":
-    "索引中各原始注释的转录本和蛋白 ID 都会解析到所属的基因。蛋白比较时每个基因用一条代表蛋白序列。",
+  "A transcript or protein ID finds its parent gene. Protein comparisons use one representative protein per gene.":
+    "输入转录本或蛋白 ID 会找到它所属的基因。蛋白比较时每个基因用一条代表蛋白。",
   "Related genes includes all stored syntenic and OrthoFinder partners, including those outside the displayed top hits.":
     "“相关基因”包括所有已存的共线和 OrthoFinder 伙伴，也包括不在显示的前几名命中里的。",
   "Same-chromosome synteny and cross-chromosome synteny are reported separately with their source runs. Cross-chromosome relationships do not by themselves establish orthology or translocation. Shared pan-gene membership is not direct pairwise synteny.":
     "同号染色体共线性和跨染色体共线性分开报告，并注明来源运行。跨染色体关系本身不能确定直系同源或易位。同属一个泛基因条目也不等于两两直接共线。",
   "Direct synteny was evaluated between same-numbered chromosomes. Shared pan-gene membership does not imply direct synteny between every pair of members.":
     "直接共线性只在同号染色体之间评估。同属一个泛基因条目，不代表每两个成员之间都直接共线。",
-  "Position-to-verify records retain the original assembly location. Gene-vote and region-context flags have different evidence bases; neither is a validated assembly correction.":
-    "“待核实位置”记录保留原始组装位置。基因投票和区段背景两种标记的证据基础不同，都不是经过验证的组装校正。",
+  "Genes flagged to verify keep their original position. The flag asks for a check; it does not correct the assembly.":
+    "标为待核实的基因保留原来的位置。这个标记只是提醒核查，并不修正组装。",
+  "To verify, by gene: each other annotation votes for the chromosome of the gene's best syntenic partner there; a partner on another chromosome counts only at ≥99% identity and ≥80% coverage. The gene is flagged when more than half of the votes go to other chromosomes, at least 3 to the same one. To verify, by region: a gene inside a run of such genes (at least 3 toward the same chromosome, at most 20 genes apart, at least half of the genes in the run) is flagged with the run, whatever its own result. Downloaded tables write these two cases as vote and stretch.":
+    "待核实（按基因）：其他每套注释按这个基因在那里的最佳共线伙伴所在的染色体投票；伙伴在另一条染色体上时，只有一致性 ≥99% 且覆盖度 ≥80% 才计票。超过一半的票投给其他染色体、且至少 3 票投给同一条时，这个基因被标记。待核实（按区段）：位于一串这类基因之中的基因（至少 3 个指向同一条染色体，彼此相隔不超过 20 个基因，且至少占这一串基因的一半），不管自己的结果如何，都随这一串一起标记。下载的表格里，这两种情况分别写作 vote 和 stretch。",
   "Consider sequence identity and coverage together. A short, high-identity match requires review of the gene models.":
     "序列一致性和覆盖度要一起看。很短但一致性很高的匹配，需要检查基因模型。",
-  "Homeolog assignments are computational predictions. Two routes agree means that a protein-match candidate is supported by a reverse-match check or by mapping through the query's within-annotation homeolog. This is not independent validation. A missing match does not establish biological absence.":
-    "部分同源基因的指派是计算预测。“两条路线一致”表示一个蛋白匹配候选得到反向匹配检查的支持，或通过查询基因在本注释内的部分同源基因映射得到支持。这不是独立验证。没有匹配不代表生物学上不存在。",
+  "Homeolog assignments are computational predictions. Cross-checked means the protein match agrees with a second check: a reverse match within the annotation, or a path through the query's homeolog in the same annotation. The two checks share input data, so this is not independent validation. A missing match does not prove that a gene is absent.":
+    "部分同源基因的指派是计算预测。“交叉核对一致”表示蛋白匹配与第二项核对结果相同：要么是同一套注释内的反向匹配，要么是经查询基因在同一套注释中的部分同源基因的核对。两项核对用到部分相同的输入数据，所以这不是独立验证。没有匹配不代表基因不存在。",
   "Data version details": "数据版本信息", "Analysis ID": "分析编号", "Protein-hit data exported": "蛋白命中数据导出日期",
   "ID index updated": "ID 索引更新日期", "Homeolog data exported": "部分同源数据导出日期", "Evidence identifiers": "证据编号",
   "Orthogroups are identified by the analysis ID and group name. Pan-gene groups also require the reference annotation and group number.":
@@ -2313,8 +2467,8 @@ const ZH_TEXT = {
     "定位在 20 条染色体上的基因。定位是做部分同源预测的前提，但不保证一定有预测：已定位的基因也可能没有可用的蛋白、低于证据阈值，或位置待核实。",
   "Analysed genes (on Chr01–Chr20 with a usable protein) that this OrthoFinder run placed in no orthogroup, with their share of the analysed genes. This does not mean that other annotations lack similar sequences, and it is not by itself evidence of a wrong gene model.":
     "已分析的基因（在 Chr01–Chr20 上且有可用蛋白）中，这次 OrthoFinder 运行没有归入任何直系同源组的基因，以及它们占已分析基因的比例。这不代表其他注释里没有相似序列，本身也不能证明基因模型有错。",
-  "Genes whose chromosome disagrees with the other annotations. Gene vote (vote): each other annotation votes for the chromosome of the gene's best syntenic counterpart there, a counterpart on another chromosome counting only at ≥99% identity and ≥80% coverage; the gene is flagged when more than half of the votes go to other chromosomes, at least 3 to the same one. Region context (region): genes within a run of such genes (at least 3 toward the same chromosome, at most 20 genes apart, at least half of the genes in the run) are flagged with the run, whatever their own vote. A flag asks for a check; it does not prove the position wrong. The assembly may be misjoined, the accession may carry a real rearrangement, or the annotations that disagree may share one layout (11 JGI assemblies were ordered on Prytzh). Downloaded tables call the two bases vote and stretch.":
-    "染色体与其他注释不一致的基因。基因投票（vote）：其他每套注释按这个基因在那里的最佳共线对应基因所在的染色体投票；对应基因在另一条染色体上时，只有一致性 ≥99% 且覆盖度 ≥80% 才计票。超过一半的票投给其他染色体、且至少 3 票投给同一条时，这个基因被标记。区段背景（region）：位于一串这类基因之中的基因（至少 3 个指向同一条染色体，彼此相隔不超过 20 个基因，且至少占这一串基因的一半），不管自己的投票如何，都随这一串一起标记。标记只是提醒核查，并不证明位置错了：可能是组装拼错了，可能这个品种真的有重排，也可能持不同意见的注释共用同一种排布（11 个 JGI 组装是按 Prytzh 排序的）。下载的表格里这两种依据分别叫 vote 和 stretch。",
+  "Genes whose chromosome disagrees with the other annotations, either the gene itself or the genes around it (rules in Data and methods). A flag asks for a check; it does not prove the position wrong. The assembly may be misjoined, the accession may carry a real rearrangement, or the annotations that disagree may share one layout (11 JGI assemblies were ordered on Prytzh).":
+    "染色体与其他注释不一致的基因，可能是这个基因本身，也可能是它周围的基因（规则见“数据与方法”）。标记只是提醒核查，并不证明位置错了：可能是组装拼错了，可能这个品种真的有重排，也可能持不同意见的注释共用同一种排布（11 个 JGI 组装是按 Prytzh 排序的）。",
   "When annotations disagree, these figures give background only; judge a specific gene by its coverage, synteny and gene-model structure. The numbers:":
     "各注释结果不一致时，这些数字只作背景参考；判断某个具体基因，请看它的覆盖度、共线性和基因模型结构。数据文件：",
   "JGI data use: the ten CSP 505836 annotations carry the notice “These sequence data were produced under JGI CSP 505836, Pangenomic comparison of structural variation driving recurrent network evolution in Brassicaceae metabolism (BAP), and made available by the Department of Energy’s Joint Genome Institute”; CAM70, CAM116 and SunesonJGI (proposal 507613) carry “These sequence data were made available by the Department of Energy’s Joint Genome Institute”.":
@@ -2336,7 +2490,7 @@ const ZH_TEXT = {
   "Choose available genes and transcripts before aligning their sequences": "先选择可用的基因和转录本，再比对它们的序列",
   "The best protein hits in each annotation, ranked by bit score": "每套注释中按比特得分排序的最佳蛋白命中",
   "Every syntenic or OrthoFinder partner, whatever its hit rank": "全部共线或 OrthoFinder 伙伴，不论命中排名",
-  "Save what this view shows, for all selected genomes, as a tab-separated file": "把当前视图显示的内容（所有选中的基因组）保存为制表符分隔文件",
+  "Save what this view shows, for all selected annotations, as a tab-separated file": "把当前视图显示的内容（所有选中的注释）保存为制表符分隔文件",
   // 基因卡片 / gene card
   "Genomic location": "基因组位置", "Representative protein": "代表蛋白", "Pan-gene groups": "泛基因条目", "Not available": "无",
   "Standard member": "标准成员", "Added via orthology": "经直系同源加入", "Additional array member": "串联重复额外成员",
@@ -2349,7 +2503,7 @@ const ZH_TEXT = {
   "is the query's own subgenome: the gene that corresponds to the query in each annotation. The other two columns are its homeologs on the other subgenomes.":
     "是查询基因自身所在的亚基因组：每套注释中与查询基因对应的基因。另外两列是它在另外两个亚基因组上的部分同源基因。",
   "(group set by its neighbourhood on this composite chromosome)": "（组别由它在这条复合染色体上的邻近基因决定）",
-  "(near a group boundary on this composite chromosome; less certain)": "（靠近这条复合染色体上的组别边界，把握较低）",
+  "(its homeolog group on this composite chromosome is uncertain)": "（它在这条复合染色体上的部分同源组不确定）",
   "Annotation names": "注释名称", "Subgenome copies": "亚基因组拷贝",
   "The seven homeolog groups": "七个部分同源组", "Group": "组",
   "* Composite chromosome: one segment in each of two groups.": "* 复合染色体：两段分属两个组。",
@@ -2358,45 +2512,88 @@ const ZH_TEXT = {
   "Annotation": "注释", "homeolog": "部分同源基因", "corresponding gene": "对应基因", "Choose sequences": "选择序列",
   "top hit": "最佳命中", "· unplaced": "· 未定位", "evidence": "证据", "details": "详情", "why?": "原因？",
   "not found under current rules": "按当前规则未找到", "copy on unplaced sequence:": "未定位序列上的拷贝：",
-  "same unplaced copy": "同一个未定位拷贝", "limit": "上限", "no stored hit ·": "没有已存命中 ·", "check": "需核查",
-  "Check this pick": "请核查这个选择", "A search hit its report limit": "有一次搜索达到报告上限",
+  "same unplaced copy": "同一个未定位拷贝", "search list full": "搜索名单已满", "no stored hit ·": "没有已存命中 ·", "check": "需核查",
+  "Check this pick": "请核查这个选择", "The search list was full": "搜索名单已满",
   "the query": "查询基因", "to verify": "待核实", "synteny + OrthoFinder": "共线性 + OrthoFinder", "synteny only": "仅共线性",
   "OrthoFinder only": "仅 OrthoFinder", "sequence only (≥ 97% identity)": "仅序列（一致性 ≥ 97%）", "partner supported": "伙伴基因支持",
-  "two routes agree": "两条路线一致", "sequence only": "仅序列", "sequence only, near-equal candidates": "仅序列，有相近候选",
-  "via own homeolog": "经本注释部分同源基因", "synteny": "共线性", "cross-chromosome synteny": "跨染色体共线性",
+  "cross-checked": "交叉核对一致", "sequence only": "仅序列", "sequence only, near-equal candidates": "仅序列，有相近候选",
+  "found via homeolog": "经部分同源基因找到", "synteny": "共线性", "cross-chromosome synteny": "跨染色体共线性",
   "protein sequence": "蛋白序列",
   "This is the query gene itself.": "这就是查询基因本身。",
-  "This pair has both a direct conserved gene-order relationship and an OrthoFinder pairwise link. Together they provide computational support, not experimental confirmation.":
-    "这对基因既有直接的保守基因顺序关系（共线性），又有 OrthoFinder 成对直系同源联系。两者一起提供的是计算上的支持，不是实验证实。",
-  "This pair has a direct conserved gene-order relationship. No OrthoFinder pairwise link was recorded for this pair.":
-    "这对基因有直接的保守基因顺序关系（共线性），但没有记录到 OrthoFinder 成对联系。",
-  "OrthoFinder links these genes. No direct syntenic relationship was recorded for this pair.":
-    "OrthoFinder 把这两个基因联系在一起，但没有记录到直接的共线关系。",
-  "A close protein match was selected without a direct syntenic or OrthoFinder link for this pair.":
-    "选中的是一个相近的蛋白匹配；这对基因没有直接的共线或 OrthoFinder 联系。",
+  "These genes sit in conserved gene order, and OrthoFinder also links them. This is computational support, not experimental proof.":
+    "这两个基因的基因顺序保守（共线），OrthoFinder 也把它们联系在一起。这是计算上的支持，不是实验证明。",
+  "These genes sit in conserved gene order. No OrthoFinder link was recorded.":
+    "这两个基因的基因顺序保守（共线），但没有记录到 OrthoFinder 联系。",
+  "OrthoFinder links these genes, but this analysis found no direct conserved gene order between them.":
+    "OrthoFinder 把这两个基因联系在一起，但本次分析未检测到它们之间有直接的共线关系。",
+  "A close protein match, with no direct synteny or OrthoFinder link recorded.":
+    "这是一个相近的蛋白匹配，没有记录到直接的共线或 OrthoFinder 联系。",
   "Open the details to inspect the evidence for this candidate.": "打开详情查看这个候选的证据。",
-  "This protein-match candidate is a syntenic or OrthoFinder partner of the query's within-annotation homeolog. Its preferred mapped gene could not be used.":
-    "这个蛋白匹配候选是查询基因在本注释内部分同源基因的共线或 OrthoFinder 伙伴；原本优先映射到的基因无法使用。",
-  "Route 1 selects this protein-match candidate for the other subgenome. Route 2 checks that this candidate's best qualifying reverse match is the query gene.":
-    "路线 1 为另一个亚基因组选出这个蛋白匹配候选；路线 2 检查这个候选反向的最佳合格匹配正是查询基因。",
-  "Route 1 matches the query protein directly to this gene. Route 2 maps the query's within-annotation homeolog to the same gene in this annotation.":
-    "路线 1 把查询蛋白直接匹配到这个基因；路线 2 把查询基因在本注释内的部分同源基因映射到这套注释里的同一个基因。",
-  "This candidate meets the protein identity and coverage criteria on the expected subgenome chromosome. No agreeing second route was available.":
-    "这个候选在预期的亚基因组染色体上满足蛋白一致性和覆盖度标准，但没有第二条路线给出一致结果。",
-  "Several protein matches have similar alignment scores. The displayed gene is one candidate; inspect the alternatives before choosing.":
-    "有几个蛋白匹配的比对得分相近。这里显示的只是其中一个候选，选择前请查看其他候选。",
-  "The direct protein match is weak or missing. This candidate is inferred by mapping the query's within-annotation homeolog to this annotation.":
-    "直接的蛋白匹配很弱或没有。这个候选是把查询基因在本注释内的部分同源基因映射到这套注释推断出来的。",
+  "The usual check gene could not be used here, so this gene was checked through another syntenic or OrthoFinder partner of the query's homeolog.":
+    "通常用于核对的基因在这里用不上，所以改用查询基因的部分同源基因的另一个共线或 OrthoFinder 伙伴来核对。",
+  "This gene is the best match on the other subgenome, and its own best match back is the query gene.":
+    "这个基因是另一个亚基因组上的最佳匹配，反过来它的最佳匹配也正是查询基因。",
+  "The direct protein match and the check through the query's homeolog in the same annotation both point to this gene.":
+    "直接的蛋白匹配，和经查询基因在同一套注释中的部分同源基因所做的核对，都指向这个基因。",
+  "The homeolog used for this check is itself unconfirmed.": "用于这次核对的部分同源基因本身也未确认。",
+  "The two checks share input data, so this is not independent or experimental proof.":
+    "两项核对用到部分相同的输入数据，所以这不是独立的或实验上的证明。",
+  "This gene passes the protein identity and coverage limits on the expected chromosome, but no second check supports it.":
+    "这个基因在预期的染色体上达到了蛋白一致性和覆盖度的要求，但没有第二项核对支持它。",
+  "Several genes match almost equally well. This is one of them; compare the others before choosing.":
+    "有几个基因匹配得几乎一样好，这里显示的是其中之一；选择前请比较其他候选。",
+  "The direct protein match is weak or missing, so this gene was found through the query's homeolog in the same annotation.":
+    "直接的蛋白匹配很弱或没有，所以这个基因是通过查询基因在同一套注释中的部分同源基因找到的。",
   "Open the details to inspect how this candidate was selected.": "打开详情查看这个候选是怎么选出来的。",
-  "This is a candidate whose position or subgenome needs review. It is not a confirmed ortholog or homeolog. Inspect its pairwise evidence and the position-conflict notice.":
-    "这是一个位置或亚基因组需要核查的候选，不是已确认的直系同源或部分同源基因。请查看它的成对证据和位置冲突说明。",
-  "Homeologs are predicted from protein similarity plus the chromosome group map. The cells use synteny of the run itself, where GENESPACE compared only same-numbered chromosomes, so there is no synteny between homeologs there. The companion run's cross-chromosome synteny, when the database has it, is used only to find genes in position conflict and to list their candidates.":
-    "部分同源基因由蛋白相似性加上染色体组别图谱预测。格子用的是本次运行自身的共线性，而 GENESPACE 只比较了同号染色体，所以那里的部分同源基因之间没有共线性。伴随运行的跨染色体共线性（如果数据库里有）只用来找出位置冲突的基因并列出它们的候选。",
+  "This is a candidate only: its position or subgenome needs checking, so it is not a confirmed corresponding gene or homeolog.":
+    "这只是一个候选：它的位置或亚基因组需要核查，不是已确认的对应基因或部分同源基因。",
+  "See its pairwise evidence and the position notice.": "请查看它的成对证据和位置说明。",
+  "Corresponding genes across annotations are selected using protein matches, OrthoFinder and synteny between chromosomes with the same number. Homeologs are predicted from protein similarity and chromosome groups. Cross-checked means that the query’s homeolog in its own annotation maps to the same candidate in another annotation, or, within the query annotation, the candidate’s best qualifying reverse match is the query. Cross-chromosome synteny is shown in Evidence and helps flag positions to verify. Homeolog predictions do not require direct synteny.":
+    "各注释之间的对应基因，根据蛋白匹配、OrthoFinder 和同号染色体之间的共线性选出。部分同源基因根据蛋白相似性和染色体组别预测。“交叉核对一致”表示：查询基因在本注释中的部分同源基因，在另一套注释里对应到同一个候选；或者在查询基因所在的注释内，候选基因合格的最佳反向匹配正是查询基因。跨染色体共线性列在“证据”页里，也帮助标记待核实的位置。部分同源预测不要求直接共线。",
+  // 标记的白话说明（FLAG_TEXT）/ plain flag text (FLAG_TEXT)
+  "Chosen by synteny or OrthoFinder. No protein match to the query is stored.":
+    "由共线性或 OrthoFinder 选出，没有存下与查询基因的蛋白匹配。",
+  "Another gene looks better on some measure. It is named under Why. Check before relying on this pick.":
+    "另一个基因在某些方面看起来更好，名字写在“原因”里。依赖这个选择之前请先核查。",
+  "No copy meeting the current rules was found on the expected chromosome, but a good match is on an unplaced sequence. It may be the missing copy, not yet assembled into a chromosome.":
+    "预期的染色体上未找到符合当前标准的拷贝，但未定位序列上有一个较好的匹配。它可能就是缺失的那个拷贝，只是还没有组装进染色体。",
+  "At least 99% identical to the query, with no second check in support. It may be a misplaced copy or the result of gene conversion.":
+    "与查询基因至少 99% 相同，但没有第二项核对支持。它可能是放错位置的拷贝，也可能来自基因转换。",
+  "Another gene scored slightly higher, but this one is within 5% and the check through the homeolog points to it.":
+    "另一个基因得分略高，但这个基因与它相差不到 5%，而且经部分同源基因的核对指向它。",
+  "The check through the query's homeolog points to a different gene, named under Why.":
+    "经查询基因的部分同源基因核对，指向另一个基因，名字写在“原因”里。",
+  "The usual check gene could not be used here, often because of a fused or split gene model, so another partner of the homeolog was used.":
+    "通常用于核对的基因在这里用不上（常见原因是基因模型被融合或拆开），所以改用了部分同源基因的另一个伙伴。",
+  "The homeolog used for this check has no second check of its own.": "用于这次核对的部分同源基因自己没有第二项核对。",
+  "The homeolog group for this gene is uncertain.": "这个基因的部分同源组尚不确定。",
+  "None fell on this chromosome, so a copy here may have been cut off.": "其中没有落在这条染色体上的，所以这里的拷贝可能被截掉了。",
+  "This gene, or a candidate left out of this cell, is on a chromosome that disagrees with other annotations. Its position needs checking.":
+    "这个基因，或被排除在这个格子之外的某个候选，所在的染色体与其他注释不一致。它的位置需要核查。",
+  // 原因句里的固定句子（REASON_RULES）/ fixed sentences of the reasons (REASON_RULES)
+  "Found through the query's homeolog in the same annotation.": "通过查询基因在同一套注释中的部分同源基因找到。",
+  "The direct protein match is below 80% identity or 50% coverage.": "直接的蛋白匹配低于 80% 一致性或 50% 覆盖度。",
+  "No direct protein match to the query is stored.": "没有存下与查询基因的直接蛋白匹配。",
+  "No stored protein match in this annotation.": "这套注释中没有已存的蛋白匹配。",
+  "The search list was full, so the match may not have been reported.": "搜索名单已满，这个匹配可能没有进入报告结果。",
+  "Its subgenome is unknown.": "它的亚基因组未知。",
+  "It may not have been assembled into a chromosome.": "它可能还没有被组装进染色体。",
+  "Another gene may be the better pick.": "另一个基因可能是更好的选择。",
+  "It may be a fragment, or the query may be two genes merged into one model.": "它可能是一个片段，也可能查询基因是两个基因被合并成的模型。",
+  "The query may be a fragment, or that gene may be a fused gene model.": "可能查询基因是一个片段，也可能那个基因是融合的基因模型。",
+  "Its position needs checking.": "它的位置需要核查。",
+  "Its position and subgenome need checking.": "它的位置和亚基因组需要核查。",
+  "Its own synteny gives no answer.": "它自己的共线性给不出结果。",
+  "No subgenome group was assigned.": "没有指派亚基因组组别。",
+  "no usable protein": "没有可用的蛋白", "not assigned": "未指派",
+  "This candidate is selected for alignment only.": "这个候选只用于比对。",
+  "No subgenome assignment was recorded.": "没有记录亚基因组指派。",
+  "The query gene's annotated transcripts.": "查询基因的注释转录本。", "Why?": "原因？",
   "Subgenome predictions are unavailable, so the closest sequence match in each annotation is shown instead.":
     "亚基因组预测不可用，所以改为显示每套注释中序列最接近的匹配。",
   "Loading the corresponding genes…": "正在载入对应基因…",
-  "No corresponding gene was identified in another genome under the current rules, so most cells are expected to be empty.":
-    "按当前规则，在其他基因组中没有找到对应基因，所以大多数格子会是空的。",
+  "No corresponding gene was identified in another annotation under the current rules, so most cells are expected to be empty.":
+    "按当前规则，在其他注释中没有找到对应基因，所以大多数格子会是空的。",
   // 格子详情弹窗 / cell details dialog
   "Gene": "基因", "Role": "角色", "What this means": "含义", "Protein match": "蛋白匹配", "Result": "结果", "Why": "原因",
   "Pairwise evidence": "成对证据", "Prediction run": "预测运行", "Flags": "标记", "See also": "另见",
@@ -2414,23 +2611,23 @@ const ZH_TEXT = {
   "Direct relations": "直接关系", "Provenance": "数据来源", "none recorded": "没有记录", "unknown search": "未知搜索",
   "No hit stored for this pair. Absence from reported hits does not establish biological absence.":
     "这对基因没有已存的命中。报告的命中里没有，不代表生物学上不存在。",
-  "A conserved gene-order relationship from the unrestricted run; it can reflect homeology or structural differences and is not a confirmed ortholog or translocation call.":
-    "来自不限制染色体的运行的保守基因顺序关系；它可能反映部分同源关系或结构差异，不是已确认的直系同源或易位判断。",
-  "not on opposite sides of any pairwise orthologue row": "不在任何一条成对直系同源记录的两侧",
-  "none in the query genome's frame": "查询基因组的框架里没有",
+  "Conserved gene order from the all-chromosome run. It can reflect homeology or structural differences; it does not confirm an ortholog or a translocation.":
+    "来自全染色体运行的保守基因顺序。它可能反映部分同源关系或结构差异，但不能确认直系同源或易位。",
+  "OrthoFinder does not list them as orthologs": "OrthoFinder 没有把它们列为直系同源",
+  "none with the query annotation as reference": "以查询注释为参考时没有",
   "none: not a recorded syntenic or OrthoFinder partner": "没有：不是已记录的共线或 OrthoFinder 伙伴",
   // 证据页 / Evidence view
   "Location": "位置", "Bits": "比特得分", "E-value": "E 值", "Identity %": "一致性 %", "Aln len": "比对长度",
   "Query cov %": "查询覆盖度 %", "Target cov %": "目标覆盖度 %", "self": "自身", "No hits to show.": "没有可显示的命中。",
-  "own genome": "本注释", "own": "本注释", "limit reached": "达到上限",
-  "At least one search hit its report limit; more similar genes may exist": "至少有一次搜索达到报告上限，可能还有更多相似基因",
+  "query annotation": "本注释",
+  "The search list was full, so more similar genes may exist": "搜索名单已满，可能还有更多相似基因",
   "anchor": "锚点", "cross-chr anchor": "跨染色体锚点", "cross-chr synteny": "跨染色体共线", "same entry": "同一条目",
   "partial": "部分匹配", "Direct syntenic anchor pair": "直接共线锚点对", "Direct syntenic pair": "直接共线对",
-  "OrthoFinder pairwise orthologue": "OrthoFinder 成对直系同源", "Same pan-gene entry (query genome frame)": "同一泛基因条目（查询基因组的框架）",
+  "Listed as orthologs by OrthoFinder": "OrthoFinder 列为直系同源", "Same pan-gene entry (query annotation as reference)": "同一泛基因条目（以查询注释为参考）",
   "Local match: one coverage below 50%. Check the annotation structure.": "局部匹配：有一个覆盖度低于 50%。请检查注释结构。",
   "Rank": "排名", "Synteny runs / blocks": "共线性运行 / 共线块", "Orthogroups": "直系同源组", "Shared pgIDs": "共享 pgID",
-  "no hit": "无命中", "No syntenic or OrthoFinder partner in this genome.": "这个基因组中没有共线或 OrthoFinder 伙伴。",
-  "No genome selected.": "没有选中基因组。",
+  "no hit": "无命中", "No syntenic or OrthoFinder partner in this annotation.": "这套注释中没有共线或 OrthoFinder 伙伴。",
+  "No annotation selected.": "没有选中注释。",
   "searched, hits reported": "已搜索，有命中", "searched, nothing reported (not proof of absence)": "已搜索，没有报告命中（不代表不存在）",
   "the query gene has no representative protein": "查询基因没有代表蛋白", "no search covered this query and target": "没有搜索覆盖这一对查询和目标",
   // 最佳匹配总表（没有亚基因组预测时）/ best-hit summary (without a subgenome prediction)
@@ -2439,19 +2636,19 @@ const ZH_TEXT = {
   "Best hit covers less than half of one protein": "最佳命中覆盖不到其中一个蛋白的一半",
   "Best hit is on a sequence not assembled into a chromosome": "最佳命中在未组装进染色体的序列上",
   "The best hit has no synteny or OrthoFinder link; a related gene ranks lower": "最佳命中没有共线或 OrthoFinder 联系；有关联的基因排名更靠后",
-  "A search reported its maximum of 25 targets": "有一次搜索报告到了 25 个目标的上限",
+  "The search list was full (25 matches)": "搜索名单已满（25 个匹配）",
   "Click a row to show every hit and every related gene in that annotation. “Direct relations” counts syntenic and OrthoFinder partners, whatever their hit rank.":
     "点击一行，显示这套注释中的全部命中和全部相关基因。“直接关系”统计共线和 OrthoFinder 伙伴，不论命中排名。",
   // 待核实 / position to verify
   "Position / subgenome to verify": "位置 / 亚基因组待核实",
-  "The original assembly location is retained. Candidates below are not assigned to a definite subgenome and are not confirmed orthologs or homeologs.":
-    "保留原始组装位置。下面的候选没有指派到确定的亚基因组，也不是已确认的直系同源或部分同源基因。",
-  "Original location": "原始位置", "Review basis": "核查依据",
-  "Region context: inside a run of gene-vote genes": "区段背景：位于一串基因投票基因之中",
-  "Gene vote: this gene’s own votes across annotations": "基因投票：这个基因自己在各注释中的投票",
-  "Candidate chromosome correspondence": "候选染色体对应", "Not settled": "未确定", "This gene’s votes": "这个基因的投票",
-  "Not taken: too few cross-chromosome partners": "未计票：跨染色体伙伴太少", "No votes": "没有投票", "Flagged region": "标记区段",
-  "How this review flag was assigned": "这个核查标记是怎么来的", "Inspect the underlying pairwise evidence.": "请查看底层的成对证据。",
+  "This gene keeps its original position. The genes below are candidates only: they have no assigned subgenome and are not confirmed.":
+    "这个基因保留原来的位置。下面的基因都只是候选：它们没有指派亚基因组，也没有得到确认。",
+  "Original location": "原始位置", "Why it is flagged": "标记原因",
+  "Nearby genes: many genes around it point to another chromosome, so it is flagged with them.": "周围的基因：它周围有很多基因指向另一条染色体，所以跟着一起被标记。",
+  "This gene: among other annotations that have a syntenic partner for it, most place that partner on a different chromosome.": "这个基因：在有它的共线伙伴的其他注释中，多数把伙伴放在另一条染色体上。",
+  "Chromosome suggested by other annotations": "其他注释指向的染色体", "Not settled": "未确定", "Where other annotations place it": "其他注释把它放在哪里",
+  "Not counted: cross-chromosome partners in fewer than 3 annotations": "未统计：有跨染色体伙伴的注释不到 3 套", "No result": "没有结果", "Flagged region": "标记区段",
+  "How this gene was flagged": "这个标记是怎么来的", "Inspect the underlying pairwise evidence.": "请查看底层的成对证据。",
   "Candidate": "候选基因", "Status / evidence": "状态 / 证据", "No pairwise evidence recorded": "没有记录成对证据",
   "No syntenic or OrthoFinder candidate was recorded in this annotation.": "这套注释中没有记录到共线或 OrthoFinder 候选。",
   "all hits and related genes": "全部命中和相关基因",
@@ -2553,7 +2750,7 @@ const ZH_PATTERNS = [
     "蛋白命中按比特得分排序。每次搜索最多报告 $1 个目标；补充搜索可能加入更多候选。"],
   // 注释与来源表 / Annotations and sources
   [/^(\d+) annotations of (\d+) accessions · data release (\S+)$/, "$2 个品种的 $1 套注释 · 数据版本 $3"],
-  [/^([\d,]+) vote · ([\d,]+) region$/, "$1 投票 · $2 区段"],
+  [/^([\d,]+) by gene · ([\d,]+) by region$/, "按基因 $1 · 按区段 $2"],
   [/^([\d,]+) bp; recomputed from the assembly FASTA$/, "$1 bp；由组装 FASTA 重新计算"],
   [/^([\d,]+) of ([\d,]+) genes$/, "$2 个基因中的 $1 个"],
   [/^([\d,]+) of ([\d,]+) analysed genes$/, "$2 个已分析基因中的 $1 个"],
@@ -2570,7 +2767,7 @@ const ZH_PATTERNS = [
   [/^1 copy ([\d,]+) · 2 copies ([\d,]+) · 3 copies ([\d,]+) · 4 or more ([\d,]+)$/, "1 个拷贝 $1 · 2 个拷贝 $2 · 3 个拷贝 $3 · 4 个及以上 $4"],
   [/^([\d,]+) in all; ([\d,]+) analysed \(on Chr01–Chr20 with a usable protein\); not analysed: ([\d,]+) with a protein off Chr01–Chr20, ([\d,]+) without a usable protein$/,
     "共 $1；已分析 $2 个（在 Chr01–Chr20 上且有可用蛋白）；未分析：$3 个有蛋白但不在 Chr01–Chr20 上，$4 个没有可用蛋白"],
-  [/^([\d,]+): ([\d,]+) by gene vote, ([\d,]+) by region context$/, "$1：基因投票 $2，区段背景 $3"],
+  [/^([\d,]+): ([\d,]+) by gene, ([\d,]+) by region$/, "$1：按基因 $2，按区段 $3"],
   [/^BUSCO (\S+) in protein mode with (\S+) \(([\d,]+) conserved genes\), one representative protein per gene, the same for every annotation\. C complete, M missing; Details add S single-copy, D duplicated, F fragmented and the number of complete copies\. In this hexaploid a high D is expected; a high C does not show that all three subgenome copies are complete\.$/,
     "BUSCO $1 蛋白模式，谱系 $2（$3 个保守基因），每个基因一条代表蛋白，所有注释都一样。C 为完整，M 为缺失；详情里另有 S 单拷贝、D 重复、F 片段化，以及完整拷贝数。在这个六倍体中 D 高是预期的；C 高并不说明三个亚基因组拷贝都完整。"],
   [/^The annotation figures could not be loaded \((.+)\)\. Close and reopen this panel to try again\.$/, "注释统计载入失败（$1）。关掉这个面板再打开即可重试。"],
@@ -2596,8 +2793,8 @@ const ZH_PATTERNS = [
   [/^Could not load the data: (.+)$/, "无法载入数据：$1"],
   [/^(.+) bp · ([+-]) strand$/, "$1 bp · $2 链"],
   [/^View (\d+) groups?$/, "查看 $1 个条目"],
-  [/^(.+) reference frame\. A group can contain multiple copies; membership is not a direct pairwise match\.$/,
-    "$1 参考框架。一个条目可以包含多个拷贝；同属一个条目不等于两两直接匹配。"],
+  [/^Reference annotation: (.+)\. A group can contain several copies; being in a group is not a direct pairwise match\.$/,
+    "参考注释：$1。一个条目可以包含多个拷贝；同属一个条目不等于两两直接匹配。"],
   [/^Group (\d+)$/, "条目 $1"],
   [/^(\d+) of (\d+) selected$/, "已选 $1/$2"],
   // 部分同源页 / Homeologs view
@@ -2608,23 +2805,59 @@ const ZH_PATTERNS = [
   [/^\+(\d+) candidates?$/, "+$1 个候选"],
   [/^Choose genes and transcripts for (SG\d)$/, "选择 $1 的基因和转录本"],
   [/^No subgenome prediction for (\S+): (.+)\. The closest sequence match in each annotation is shown instead\.$/,
-    "$1 没有亚基因组预测：$2。改为显示每套注释中序列最接近的匹配。"],
-  [/^Each cell: gene · identity · coverage of the query \/ of that gene · evidence · near-equal candidates\. Subgenome names: (.+?)\. (Homeologs are .+)$/,
+    (all, id, note) => `${id} 没有亚基因组预测：${zhPart(note)}。改为显示每套注释中序列最接近的匹配。`],
+  [/^(\S+) is not one of Chr01-Chr20$/, "$1 不在 Chr01–Chr20 之中"],
+  [/^Each cell: gene · identity · coverage of the query \/ of that gene · evidence · near-equal candidates\. Subgenome names: (.+?)\. (Corresponding genes across .+)$/,
     (all, naming, caveat) => "每个格子：基因 · 一致性 · 覆盖度（查询基因 / 该基因）· 证据 · 相近候选。亚基因组命名依 "
       + naming.replace("; homeolog groups as in ", "；部分同源组依 ") + "。" + zhPart(caveat)],
   // 证据标签的读屏文字："标签. 说明" / screen-reader text of an evidence badge: "label. explanation"
-  [/^(the query|to verify|synteny \+ OrthoFinder|synteny only|OrthoFinder only|sequence only \(≥ 97% identity\)|partner supported|two routes agree|sequence only|sequence only, near-equal candidates|via own homeolog)\. (.+)$/,
+  [/^(the query|to verify|synteny \+ OrthoFinder|synteny only|OrthoFinder only|sequence only \(≥ 97% identity\)|partner supported|cross-checked|sequence only|sequence only, near-equal candidates|found via homeolog)\. (.+)$/,
     (all, label, text) => `${zhPart(label)}。${zhPart(text)}`],
-  [/^(.+?)( The intermediate homeolog is itself unconfirmed\.)? These checks share input evidence; agreement is not independent or experimental validation\.$/,
-    (all, first, intermediate) => I18N.lookup(first)
-      ? `${I18N.lookup(first)}${intermediate ? "中间的部分同源基因本身也未确认。" : ""}这些检查用到的输入证据有重叠，结果一致并不是独立的或实验上的验证。`
-      : null],
-  [/^This is a candidate whose position or subgenome needs review\. It is not a confirmed ortholog or homeolog\. (.+)$/,
-    "这是一个位置或亚基因组需要核查的候选，不是已确认的直系同源或部分同源基因。$1"],
   // 证据种类连在一起（"A + B"）/ evidence kinds joined ("A + B")
-  [/^(?:synteny|cross-chromosome synteny|OrthoFinder|protein sequence|via own homeolog|the query)(?: \+ (?:synteny|cross-chromosome synteny|OrthoFinder|protein sequence|via own homeolog|the query))+$/,
+  [/^(?:synteny|cross-chromosome synteny|OrthoFinder|protein sequence|found via homeolog|the query)(?: \+ (?:synteny|cross-chromosome synteny|OrthoFinder|protein sequence|found via homeolog|the query))+$/,
     (all) => all.split(" + ").map(zhPart).join(" + ")],
   [/^to verify · (.+)$/, (all, kinds) => `待核实 · ${zhPart(kinds)}`],
+  // Sentences of flags and reasons with gene names or numbers; a text of several sentences is split in lookup()
+  [/^The search keeps at most (\d+) matches per protein, and the list was full\.$/, "每个蛋白的搜索最多保留 $1 个匹配，这次名单已满。"],
+  [/^The check through the query's homeolog points to a different gene: (\S+)\.$/, "经查询基因的部分同源基因核对，指向另一个基因：$1。"],
+  [/^The check through the query's homeolog points to (\S+), but no match to the query is stored\.$/,
+    "经查询基因的部分同源基因核对，指向 $1，但没有存下它与查询基因的匹配。"],
+  [/^The check through the query's homeolog points to (\S+), but its protein match is below 80% identity or 50% coverage\.$/,
+    "经查询基因的部分同源基因核对，指向 $1，但它的蛋白匹配低于 80% 一致性或 50% 覆盖度。"],
+  [/^The check through the query's homeolog points to (\S+), but that gene is on the other part of a composite chromosome\.$/,
+    "经查询基因的部分同源基因核对，指向 $1，但这个基因在复合染色体的另一段上。"],
+  [/^(\S+) on (\S+) matches, but it lies on the other part of that composite chromosome \(group (G\d+)\)\.$/,
+    "$2 上的 $1 能匹配上，但它在这条复合染色体的另一段上（$3 组）。"],
+  [/^Matches on (\S+) are below 80% identity or 50% coverage\.$/, "$1 上的匹配低于 80% 一致性或 50% 覆盖度。"],
+  [/^The only matches on (\S+) are genes whose position needs checking\.$/, "$1 上的匹配全都是位置待核实的基因。"],
+  [/^No stored protein match on (\S+)\.$/, "$1 上没有已存的蛋白匹配。"],
+  [/^A good match is on an unplaced sequence: (\S+) on (\S+), ([\d.]+)% identity, coverage (\d+)\/(\d+)\.$/,
+    "未定位序列上有一个较好的匹配：$2 上的 $1，一致性 $3%，覆盖度 $4/$5。"],
+  [/^The best copy is on an unplaced sequence: (\S+) on (\S+), ([\d.]+)% identity, coverage (\d+)\/(\d+)\.$/,
+    "最好的拷贝在未定位序列上：$2 上的 $1，一致性 $3%，覆盖度 $4/$5。"],
+  [/^No corresponding gene found on (\S+) under the current rules: no syntenic or OrthoFinder partner, and no stored copy at least 97% identical\.$/,
+    "按当前规则，$1 上未找到对应基因：既没有共线或 OrthoFinder 伙伴，也没有已存的一致性达到 97% 的拷贝。"],
+  [/^It has cross-chromosome partners in fewer than (\d+) annotations, too few to judge on its own\.$/,
+    "它只在不到 $1 套注释中有跨染色体伙伴，太少，无法单独判断。"],
+  [/^Copies at least 97% identical are only on (\S+(?:, \S+)*)\.$/, "一致性达到 97% 的拷贝只在 $1 上。"],
+  [/^Syntenic or OrthoFinder partners are only on (\S+(?:, \S+)*)\.$/, "共线或 OrthoFinder 伙伴只在 $1 上。"],
+  [/^(\S+) has more evidence: both synteny and OrthoFinder\.$/, "$1 的证据更多：共线性和 OrthoFinder 都有。"],
+  [/^(\S+) is a complete, near-identical copy \(([\d.]+)% identical\)\.$/, "$1 是一个完整且几乎相同的拷贝（一致性 $2%）。"],
+  [/^(\S+) is the syntenic anchor at this position\.$/, "$1 是这个位置的共线锚点。"],
+  [/^(\S+) is near-identical \(([\d.]+)%\) but covers only (\d+)% of the query\.$/, "$1 几乎相同（$2%），但只覆盖查询基因的 $3%。"],
+  [/^(\S+) is near-identical \(([\d.]+)%\) but only (\d+)% of it aligns\.$/, "$1 几乎相同（$2%），但它只有 $3% 比对上。"],
+  [/^(\S+) has a much higher score: (\d+) bits against (\d+)\.$/, "$1 的得分高得多：$2 比特对 $3 比特。"],
+  [/^(This gene|\S+) (is|was left out: it is) on (\S+) here, but (\d+) of (\d+) annotations place its syntenic partner on (\S+(?: or \S+)*)\.$/,
+    (all, gene, verb, on, n, total, where) => `${zhSubject(gene, verb)}在这里位于 ${on}，`
+      + `但 ${total} 套注释中有 ${n} 套把它的共线伙伴放在 ${where.replace(/ or /g, " 或 ")} 上。`],
+  [/^(This gene|\S+) (is|was left out: it is) on (\S+) here, but its syntenic partners point to (\S+(?: or \S+)*), (\d+) of (\d+) annotations each\.$/,
+    (all, gene, verb, on, where, n, total) => `${zhSubject(gene, verb)}在这里位于 ${on}，`
+      + `但它的共线伙伴指向 ${where.replace(/ or /g, " 或 ")}，${total} 套注释中各有 ${n} 套。`],
+  [/^(This gene|\S+) (is|was left out: it is) on (\S+) here, in a ([\d.]+)–([\d.]+) Mb region where (\d+) of (\d+) genes point to (\S+)\.$/,
+    (all, gene, verb, on, from, to, n, total, target) => `${zhSubject(gene, verb)}在这里位于 ${on} 的 ${from}–${to} Mb 区段，`
+      + `这个区段 ${total} 个基因中有 ${n} 个指向 ${target}。`],
+  [/^On its own: (.+) of (\d+) annotations\.$/, "单看它自己：$2 套注释中 $1。"],
+  [/^In the Homeologs view: (.+)$/, (all, text) => `在部分同源视图中：${zhPart(text)}`],
   // 详情弹窗 / details dialogs
   [/^(\S+): (SG\d) copy in (.+)$/, "$1：$3 中的 $2 拷贝"],
   [/^(\S+): candidate in (.+)$/, "$1：$2 中的候选基因"],
@@ -2647,8 +2880,8 @@ const ZH_PATTERNS = [
       return `${query}（${scope(qScope)}蛋白）对 ${target}（${scope(tScope)}）搜索，最多报告 ${max} 个目标，目标库 ${letters} 个残基`;
     }],
   [/^orthogroup (\S+) \(pairwise row (\S+) of run (\S+)\)$/, "直系同源组 $1（运行 $3 的成对记录 $2）"],
-  [/^(entry \S+(?:, entry \S+)*) in the (.+) frame of run (\S+)$/,
-    (all, entries, frame, run) => `${entries.replace(/entry /g, "条目 ").replace(/, /g, "、")}（运行 ${run} 的 ${frame} 框架）`],
+  [/^(entry \S+(?:, entry \S+)*) with (.+) as reference annotation, run (\S+)$/,
+    (all, entries, frame, run) => `${entries.replace(/entry /g, "条目 ").replace(/, /g, "、")}（运行 ${run}，参考注释 ${frame}）`],
   [/^run (\S+); source database SHA-256 (\S+); evidence identifiers require their source run\.$/,
     "运行 $1；源数据库 SHA-256 $2；证据编号要和来源运行一起看。"],
   // 共线块名称（可能几个连在一起）：只换 "(anchor)" 和"未归入共线块"两处 / synteny block names (possibly several joined):
@@ -2659,9 +2892,9 @@ const ZH_PATTERNS = [
   [/^Cross-chromosome (anchor pair|syntenic pair) from (.+)\. This does not by itself establish orthology or a translocation\.$/,
     (all, kind, run) => `来自 ${run} 的跨染色体${kind === "anchor pair" ? "锚点对" : "共线对"}。仅凭这一点不能确定直系同源或易位。`],
   [/^Pan-gene group (\d+)$/, "泛基因条目 $1"],
-  [/^(\d+) members across (\d+) annotations · (.+) reference frame$/, "$1 个成员，分布在 $2 套注释中 · $3 参考框架"],
-  [/^Run (\S+) · frame (\S+) · pgID (\S+)\. Cite this combination; group numbers differ between frames\. Interpolated positions use gene order, not base pairs\.$/,
-    "运行 $1 · 框架 $2 · pgID $3。引用时请写全这一组合：不同框架的条目编号不同。插值位置按基因顺序，不是碱基位置。"],
+  [/^(\d+) members across (\d+) annotations · reference annotation (.+)$/, "$1 个成员，分布在 $2 套注释中 · 参考注释 $3"],
+  [/^Run (\S+) · reference annotation (\S+) · pgID (\S+)\. Cite this combination; group numbers differ between reference annotations\. Interpolated positions use gene order, not base pairs\.$/,
+    "运行 $1 · 参考注释 $2 · pgID $3。引用时请写全这一组合：不同参考注释的条目编号不同。插值位置按基因顺序，不是碱基位置。"],
   // 证据页 / Evidence view
   [/^(\d+) candidates?$/, "$1 个候选"],
   [/^Hits in (.+)$/, "$1 中的命中"],
@@ -2671,8 +2904,8 @@ const ZH_PATTERNS = [
   [/^(\d+) other hits? within 95% of the best bit score$/, "另有 $1 个命中的比特得分在最佳值的 95% 以内"],
   [/^(.+) bp · ([\d.]+)% identity · (\d+) bits$/, "$1 bp · 一致性 $2% · $3 比特"],
   // 待核实 / position to verify
-  [/^(.+) bp; ([\d,]+) of ([\d,]+) genes in it are flagged by gene vote toward (\S+)\. These are review boundaries, not validated rearrangement breakpoints\.$/,
-    "$1 bp；其中 $3 个基因中有 $2 个按基因投票指向 $4。这是核查区段的边界，不是经过验证的重排断点。"],
+  [/^(.+) bp\. Here ([\d,]+) of ([\d,]+) genes point to (\S+)\. These limits mark what to check; they are not proven rearrangement breakpoints\.$/,
+    "$1 bp。这里 $3 个基因中有 $2 个指向 $4。这个范围只是提示要核查的位置，不是已证实的重排断点。"],
   [/^(\d+) of (\d+) candidates shown here\. Evidence → Related genes lists every stored pairwise relationship\.$/,
     "这里显示 $2 个候选中的 $1 个。证据 → 相关基因 列出全部已存的成对关系。"],
   // 功能注释面板 / functional annotation panel
@@ -2711,7 +2944,7 @@ const ZH_PATTERNS = [
   [/^Include (\S+) from (.+)$/, "纳入 $2 的 $1"],
   [/^Gene for (.+)$/, "$1 的基因"],
   [/^Transcript for (.+)$/, "$1 的转录本"],
-  [/^No subgenome group was assigned \((.+)\)\.$/, "没有指派亚基因组组别（$1）。"],
+  [/^No subgenome group was assigned \((.+)\)\.$/, (all, note) => `没有指派亚基因组组别（${zhPart(note)}）。`],
   [/^(\d+) proteins aligned in your browser with Kalign (\S+)\.$/, "$1 条蛋白已在浏览器中用 Kalign $2 比对。"],
   [/^Highlight differences from (.+)$/, "突出显示与 $1 的差异"],
   [/^(\d+) proteins · (\d+) alignment columns$/, "$1 条蛋白 · $2 个比对列"],
@@ -2734,15 +2967,15 @@ const ZH_HTML = {
   "legend.names": "DH55V2 和 DH55V3 是 DH55 的两套注释。SunesonDecker2025（Montana State University，MSU_CS-sun）、SunesonJGI、SunesonFang2023 和 SunesonBrock2024 是 Suneson 的四套注释。下载的表格和数据集文件里，SunesonDecker2025 的数据 ID 是 <code>Suneson</code>。",
   "legend.homeologs": "每套注释一行，每个亚基因组一列。高亮的一列是查询基因自身所在的亚基因组：这套注释里与查询基因对应的基因（染色体编号相同），附带证据。另外两列是它在另外两个亚基因组上的部分同源基因。注释名下面的<em>最佳命中</em>表示最强的蛋白匹配不是这三个基因之一，例如另一条染色体上的拷贝或未定位序列。",
   "legend.evidence": "<em>命中排名</em>列出每套注释中按比特得分排序的最佳蛋白命中；<em>相关基因</em>列出全部共线或 OrthoFinder 伙伴，不论排名。序列最相似的不一定就是对应基因：在六倍体中，另一个亚基因组上的拷贝或一个局部匹配的得分可能比共线的拷贝更高。",
-  "legend.synteny": "同号染色体 GENESPACE 运行报告的基因对；<em>锚点</em>表示这对基因是其共线块的锚点。打开详情可以看来源运行和共线块。",
-  "legend.cross": "不限制染色体的伴随运行在不同编号的染色体之间报告的基因对。它可能连接亚基因组拷贝，也可能连接位于别处的区段；仅凭这一证据不能确定直接的直系同源关系或结构重排。",
-  "legend.orthofinder": "这两个基因分别位于一条 OrthoFinder 成对直系同源记录的两侧。",
-  "legend.entry": "两个基因在查询基因组的框架中属于同一个泛基因条目。同属一个条目不等于直接共线。",
+  "legend.synteny": "同号染色体上基因顺序保守的两个基因，来自 GENESPACE。<em>锚点</em>：用来构建共线块的基因对。打开详情可以看来源运行和共线块。",
+  "legend.cross": "不同编号染色体上基因顺序保守的两个基因，来自全染色体运行。它们可能是亚基因组拷贝，也可能是移动过的区段；仅凭这一点无法区分。",
+  "legend.orthofinder": "OrthoFinder 把这两个基因列为直系同源。",
+  "legend.entry": "以查询注释为参考时，两个基因属于同一个泛基因条目。这不代表它们直接共线。",
   "legend.partial": "两个覆盖度中有一个低于 50%：局部匹配。一致性高时需要检查注释结构；它本身不能证明基因被拆分了。",
-  "legend.rank": "在这个基因组的全部已存候选中按比特得分排序（自身命中单独列出）。每次搜索最多报告 25 个目标，所以没有命中不代表不存在。",
-  "legend.subgenomes": "亚麻荠是异源六倍体：多数基因有三个拷贝，每个亚基因组一个（SG1、SG2、SG3；命名依 Chaudhary et al. 2020，分组依 Martin et al. 2022）。查询基因自身亚基因组那一列显示每套注释中的对应基因（染色体编号相同）；另外两列显示预测的部分同源基因，即查询基因所在部分同源组中、那个亚基因组染色体上的最佳蛋白匹配。每个格子注明证据（共线性 + OrthoFinder、两条路线一致、仅序列、经本注释部分同源基因）以及有几个相近候选。<span class=\"badge partial\">需核查</span> 表示另一个候选在其他标准上胜出（例如紧挨着全长选择的一个几乎相同的片段），或者是一个没有任何证据确认的几乎相同的部分同源基因；打开详情可以看原因。<em>按当前规则未找到</em> 可能表示这个拷贝在未定位序列上、没有蛋白模型、低于阈值，或者确实不存在；格子的详情会说明是哪一种。",
-  "legend.verify": "染色体标签与现有的对应证据冲突，或者基因位于被标记待查的区段内。保留原始基因组位置。候选基因显示时不带确认的亚基因组指派，不能当作已确立的直系同源或部分同源基因。",
-  "legend.review": "<em>基因投票</em>：在有这个基因共线对应基因的其他注释中，超过一半把它放在另一条染色体上，且至少 3 套放在同一条上（对应基因在另一条染色体上时，只有一致性 ≥99% 且覆盖度 ≥80% 才计入）。<em>区段背景</em>：这个基因位于一串指向同一条染色体的基因投票基因之中，即使它自己的投票缺失、很少或指向自己的染色体，也随这一串一起标记。下载的表格把这两种叫作 <code>vote</code> 和 <code>stretch</code>。两种都是核查标记，不证明基因真的移动了，也不证明组装有错。",
+  "legend.rank": "在这套注释的全部已存候选中按比特得分排序（自身命中单独列出）。每次搜索最多报告 25 个目标，所以没有命中不代表不存在。",
+  "legend.subgenomes": "<ul class=\"legend-points\"><li>亚麻荠是异源六倍体：多数基因有三个拷贝，每个亚基因组一个（SG1、SG2、SG3；命名依 Chaudhary et al. 2020，分组依 Martin et al. 2022）。</li><li>高亮的一列显示每套注释中的对应基因（染色体编号相同）。</li><li>另外两列显示预测的部分同源基因：在这个拷贝预期所在的染色体上，最佳的蛋白匹配。</li><li>每个格子注明证据（共线性 + OrthoFinder、交叉核对一致、仅序列、经部分同源基因找到）以及有几个相近候选。</li><li><span class=\"badge partial\">需核查</span> 表示这个选择值得再看一眼，例如另一个基因可能更好，或者一个几乎相同的部分同源基因没有第二项核对。打开详情可以看原因。</li><li><em>按当前规则未找到</em> 可能表示这个拷贝在未定位序列上、没有蛋白模型、低于阈值，或者确实不存在。格子的详情会说明是哪一种。</li></ul>",
+  "legend.verify": "其他注释显示这个基因应该在另一条染色体上，或者它位于因此被标记的区段内。它保留原来的位置。它的候选基因没有确认的亚基因组，不能当作已确立的对应基因或部分同源基因。",
+  "legend.review": "<ul class=\"legend-points\"><li><em>这个基因</em>：在有它的共线伙伴的其他注释中，多数把伙伴放在另一条染色体上。</li><li><em>周围的基因</em>：它周围有很多基因指向另一条染色体，所以跟着一起被标记。</li><li>两种标记都只是提醒核查，不证明基因真的移动了，也不证明组装有错。</li></ul>",
 };
 
 // ---- Interface languages / 界面语言 ----------------------------------------------------------------
@@ -2785,6 +3018,12 @@ const I18N = (() => {
       const translated = typeof replacement === "function"
         ? replacement(...match, match.index, key) : key.replace(pattern, replacement);
       if (translated !== null && translated !== undefined) return translated;
+    }
+    // A text of several sentences is translated one sentence at a time, and only when every sentence is known.
+    const sentences = key.replace(/\.\s+(?=[A-Z])/g, ".\n").split("\n");
+    if (sentences.length > 1) {
+      const parts = sentences.map(lookup);
+      if (parts.every((part) => part !== null)) return parts.join("");
     }
     return null;
   }

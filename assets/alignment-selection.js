@@ -164,7 +164,7 @@ window.AlignmentSelection = (() => {
         transcriptCell = element("td", { class: "alignment-transcript-cell" },
           element("span", { class: "muted" }, "No candidate selected under the current rules"),
           member.reason ? element("details", { class: "small alignment-missing-reason" },
-            element("summary", {}, "Why?"), element("p", {}, member.reason)) : null);
+            element("summary", {}, "Why?"), element("p", {}, plainReason(member.reason))) : null);
       } else if (hasTranscripts) {
         const chooser = element("select", {
           class: "alignment-transcript", "aria-label": `Transcript for ${member.gene_id || member.genome}`,

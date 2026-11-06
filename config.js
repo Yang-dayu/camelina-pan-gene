@@ -153,8 +153,8 @@ window.PANGENE_CONFIG = {
   downloads: [
     { path: "web/tables/genes.tsv.gz", label: "All genes with their IDs, positions and status" },
     { path: "web/tables/relations/", label: "Related genes per query annotation: pairwise evidence and alignment metrics", folder: true },
-    { path: "homeologs/tables/", label: "Predicted SG1/SG2/SG3 copies, group assignments and position-conflict review candidates", folder: true },
-    { path: "tables/pangenes/", label: "GENESPACE pan-gene tables, one per reference frame", folder: true },
+    { path: "homeologs/tables/", label: "Predicted SG1/SG2/SG3 copies, group assignments and genes to verify", folder: true },
+    { path: "tables/pangenes/", label: "GENESPACE pan-gene tables, one per reference annotation", folder: true },
     { path: "sequences/", label: "All-transcript catalog, protein/CDS shards and their sequence index", folder: true },
     // 功能注释：每套注释的基因表、转录本表和 GO/KEGG 富集文件，加上说明 / functional annotation: per-annotation
     // gene and transcript tables, GO/KEGG enrichment files, and the description

@@ -806,6 +806,8 @@ td.evidence { white-space: nowrap; }
 .summary-hint { color: var(--muted); font-size: 13px; }
 .legend dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 18px; margin: 0; padding: 4px 20px 20px; }
 .legend dd { margin: 0; color: var(--muted); }
+.legend-points { margin: 0; padding-left: 18px; }
+.legend-points li + li { margin-top: 4px; }
 .downloads { margin-top: 44px; }
 /* 页面底部的一条：下载按钮和一句说明 / the strip at the bottom: the Downloads button and one sentence */
 .data-band {
@@ -861,6 +863,7 @@ td.evidence { white-space: nowrap; }
 .detail-row dt { color: var(--muted); }
 .detail-row dd { margin: 0; }
 .detail-row ul { margin: 0; padding-left: 18px; }
+.flag-key { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
 .site-footer { margin-top: 24px; padding: 22px 0 30px; border-top: 1px solid var(--line); background: var(--surface); font-size: 13.5px; }
 .site-footer p { margin: 3px 0; }
 .footer-title { font-weight: 700; font-size: 14.5px; }
