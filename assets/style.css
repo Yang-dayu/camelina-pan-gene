@@ -808,6 +808,8 @@ td.evidence { white-space: nowrap; }
 .legend dd { margin: 0; color: var(--muted); }
 .legend-points { margin: 0; padding-left: 18px; }
 .legend-points li + li { margin-top: 4px; }
+.legend-group { margin: 0 0 4px; color: var(--text); }
+.legend-points + .legend-group { margin-top: 12px; }
 .downloads { margin-top: 44px; }
 /* 页面底部的一条：下载按钮和一句说明 / the strip at the bottom: the Downloads button and one sentence */
 .data-band {

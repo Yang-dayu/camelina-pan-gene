@@ -2504,7 +2504,7 @@ const ZH_TEXT = {
     "是查询基因自身所在的亚基因组：每套注释中与查询基因对应的基因。另外两列是它在另外两个亚基因组上的部分同源基因。",
   "(group set by its neighbourhood on this composite chromosome)": "（组别由它在这条复合染色体上的邻近基因决定）",
   "(its homeolog group on this composite chromosome is uncertain)": "（它在这条复合染色体上的部分同源组不确定）",
-  "Annotation names": "注释名称", "Subgenome copies": "亚基因组拷贝",
+  "Annotation names": "注释名称", "Subgenome copies": "亚基因组拷贝", "Evidence labels": "证据标记",
   "The seven homeolog groups": "七个部分同源组", "Group": "组",
   "* Composite chromosome: one segment in each of two groups.": "* 复合染色体：两段分属两个组。",
   "Sources:": "来源：", "Martin et al. 2022, Table 4 (groups)": "Martin et al. 2022，表 4（分组）",
@@ -2973,7 +2973,8 @@ const ZH_HTML = {
   "legend.entry": "以查询注释为参考时，两个基因属于同一个泛基因条目。这不代表它们直接共线。",
   "legend.partial": "两个覆盖度中有一个低于 50%：局部匹配。一致性高时需要检查注释结构；它本身不能证明基因被拆分了。",
   "legend.rank": "在这套注释的全部已存候选中按比特得分排序（自身命中单独列出）。每次搜索最多报告 25 个目标，所以没有命中不代表不存在。",
-  "legend.subgenomes": "<ul class=\"legend-points\"><li>亚麻荠是异源六倍体：多数基因有三个拷贝，每个亚基因组一个（SG1、SG2、SG3；命名依 Chaudhary et al. 2020，分组依 Martin et al. 2022）。</li><li>高亮的一列显示每套注释中的对应基因（染色体编号相同）。</li><li>另外两列显示预测的部分同源基因：在这个拷贝预期所在的染色体上，最佳的蛋白匹配。</li><li>每个格子注明证据（共线性 + OrthoFinder、交叉核对一致、仅序列、经部分同源基因找到）以及有几个相近候选。</li><li><span class=\"badge partial\">需核查</span> 表示这个选择值得再看一眼，例如另一个基因可能更好，或者一个几乎相同的部分同源基因没有第二项核对。打开详情可以看原因。</li><li><em>按当前规则未找到</em> 可能表示这个拷贝在未定位序列上、没有蛋白模型、低于阈值，或者确实不存在。格子的详情会说明是哪一种。</li></ul>",
+  "legend.subgenomes": "<ul class=\"legend-points\"><li>亚麻荠是异源六倍体：多数基因有三个拷贝，每个亚基因组一个（SG1、SG2、SG3；命名依 Chaudhary et al. 2020，分组依 Martin et al. 2022）。</li><li>高亮的一列显示每套注释中的对应基因（染色体编号相同）。</li><li>另外两列显示预测的部分同源基因：在这个拷贝预期所在的染色体上，最佳的蛋白匹配。</li><li>每个格子注明证据以及有几个相近候选。每个标记的含义见“证据标记”。</li><li><span class=\"badge partial\">需核查</span> 表示这个选择值得再看一眼，例如另一个基因可能更好，或者一个几乎相同的部分同源基因没有第二项核对。打开详情可以看原因。</li><li><em>按当前规则未找到</em> 可能表示这个拷贝在未定位序列上、没有蛋白模型、低于阈值，或者确实不存在。格子的详情会说明是哪一种。</li><li><span class=\"badge cap\">搜索名单已满</span> 出现在空格子里，表示每个蛋白的搜索最多保留 25 个匹配，这次名单已满，所以这里的拷贝可能被截掉了。</li></ul>",
+  "legend.labels": "<p class=\"legend-group\">高亮列：对应基因，在同号染色体上。标记说明这两个基因之间有哪些证据。</p><ul class=\"legend-points\"><li><span class=\"badge state-confirmed\">共线性 + OrthoFinder</span> 基因顺序保守，OrthoFinder 也把这两个基因联系在一起。</li><li><span class=\"badge state-single_evidence\">仅共线性</span> 基因顺序保守，没有记录到 OrthoFinder 联系。</li><li><span class=\"badge state-single_evidence\">仅 OrthoFinder</span> OrthoFinder 把这两个基因联系在一起，本次分析未检测到它们之间有直接的共线关系。</li><li><span class=\"badge state-sequence_only\">仅序列（一致性 ≥ 97%）</span> 没有记录到共线或 OrthoFinder 伙伴，按相近的蛋白匹配选出。</li><li><span class=\"badge state-to_verify\">待核实</span> 只是候选，位置需要核查。</li><li><span class=\"badge state-self\">查询基因</span> 就是你查询的基因。</li></ul><p class=\"legend-group\">另外两列：预测的部分同源基因，在不同的染色体上。预测不要求直接共线，所以标记说明每个基因是怎样核对的。</p><ul class=\"legend-points\"><li><span class=\"badge state-confirmed\">交叉核对一致</span> 查询基因在本注释中的部分同源基因，在另一套注释里对应到同一个候选；或者在查询基因所在的注释内，候选基因合格的最佳反向匹配正是查询基因。</li><li><span class=\"badge state-confirmed\">伙伴基因支持</span> 通常用于核对的基因用不上，所以改用了部分同源基因的另一个共线或 OrthoFinder 伙伴。</li><li><span class=\"badge state-via_own_homeolog\">经部分同源基因找到</span> 直接的蛋白匹配很弱或没有，所以这个基因是通过查询基因在本注释中的部分同源基因找到的。</li><li><span class=\"badge state-sequence_only\">仅序列</span> 达到了蛋白一致性和覆盖度的要求，但没有第二项核对支持它。</li><li><span class=\"badge state-ambiguous\">仅序列，有相近候选</span> 有几个基因匹配得几乎一样好，也没有第二项核对支持这一个。</li></ul>",
   "legend.verify": "其他注释显示这个基因应该在另一条染色体上，或者它位于因此被标记的区段内。它保留原来的位置。它的候选基因没有确认的亚基因组，不能当作已确立的对应基因或部分同源基因。",
   "legend.review": "<ul class=\"legend-points\"><li><em>这个基因</em>：在有它的共线伙伴的其他注释中，多数把伙伴放在另一条染色体上。</li><li><em>周围的基因</em>：它周围有很多基因指向另一条染色体，所以跟着一起被标记。</li><li>两种标记都只是提醒核查，不证明基因真的移动了，也不证明组装有错。</li></ul>",
 };

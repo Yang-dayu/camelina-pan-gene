@@ -21,7 +21,7 @@
       }
     } catch (error) {}
   </script>
-  <link rel="stylesheet" href="assets/style.css?v=20261105-ui-47">
+  <link rel="stylesheet" href="assets/style.css?v=20261105-ui-48">
 </head>
 <body class="is-home">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -236,10 +236,31 @@
           <li>Camelina sativa is allohexaploid: most genes have three copies, one per subgenome (SG1, SG2, SG3; names as in Chaudhary et al. 2020, groups as in Martin et al. 2022).</li>
           <li>The highlighted column shows the corresponding gene in each annotation (same chromosome number).</li>
           <li>The other two columns show predicted homeologs: the best protein match on the chromosome where that copy is expected.</li>
-          <li>Each cell states its evidence (synteny + OrthoFinder, cross-checked, sequence only, found via homeolog) and how many near-equal candidates exist.</li>
+          <li>Each cell states its evidence and how many near-equal candidates exist. Each label is explained under Evidence labels.</li>
           <li><span class="badge partial">check</span> means this pick deserves a second look, for example another gene may be better, or a near-identical homeolog has no second check. Open its details to see why.</li>
           <li><em>Not found under current rules</em> can mean the copy is on an unplaced sequence, has no protein model, falls below the thresholds, or is absent. The cell's details say which.</li>
+          <li><span class="badge cap">search list full</span> on an empty cell means the search keeps at most 25 matches per protein and the list was full, so a copy may have been cut off.</li>
         </ul></dd>
+        <dt>Evidence labels</dt>
+        <dd data-i18n="legend.labels">
+          <p class="legend-group">Highlighted column: the corresponding gene, on the chromosome with the same number. The label names the evidence linking the two genes.</p>
+          <ul class="legend-points">
+            <li><span class="badge state-confirmed">synteny + OrthoFinder</span> conserved gene order, and OrthoFinder links the two genes.</li>
+            <li><span class="badge state-single_evidence">synteny only</span> conserved gene order; no OrthoFinder link was recorded.</li>
+            <li><span class="badge state-single_evidence">OrthoFinder only</span> OrthoFinder links the two genes; this analysis found no direct conserved gene order between them.</li>
+            <li><span class="badge state-sequence_only">sequence only (≥ 97% identity)</span> no syntenic or OrthoFinder partner was recorded; chosen as a close protein match.</li>
+            <li><span class="badge state-to_verify">to verify</span> a candidate whose position needs checking.</li>
+            <li><span class="badge state-self">the query</span> the gene you searched for.</li>
+          </ul>
+          <p class="legend-group">Other two columns: predicted homeologs, on different chromosomes. Predictions do not require direct synteny, so the label shows how each gene was checked.</p>
+          <ul class="legend-points">
+            <li><span class="badge state-confirmed">cross-checked</span> the query's homeolog in its own annotation maps to the same candidate in another annotation, or, within the query annotation, the candidate's best qualifying reverse match is the query.</li>
+            <li><span class="badge state-confirmed">partner supported</span> the usual check gene could not be used, so another syntenic or OrthoFinder partner of the homeolog was used.</li>
+            <li><span class="badge state-via_own_homeolog">found via homeolog</span> the direct protein match is weak or missing, so the gene was found through the query's homeolog in its own annotation.</li>
+            <li><span class="badge state-sequence_only">sequence only</span> passes the protein identity and coverage limits, but no second check supports it.</li>
+            <li><span class="badge state-ambiguous">sequence only, near-equal candidates</span> several genes match almost equally well, and no second check supports this one.</li>
+          </ul>
+        </dd>
         <dt><span class="badge state-to_verify">to verify</span></dt>
         <dd data-i18n="legend.verify">Other annotations suggest this gene belongs on another chromosome, or it lies in a region flagged for that reason. It keeps its original position. Its candidates have no confirmed subgenome, so do not read them as established corresponding genes or homeologs.</dd>
         <dt>Why it is flagged</dt>
@@ -301,15 +322,15 @@
   </footer>
 
   <!-- Bump the asset tag together whenever page scripts or styles change. -->
-  <script src="config.js?v=20261105-ui-47"></script>
-  <script src="assets/browser-alignment.js?v=20261105-ui-47"></script>
-  <script src="assets/codon-alignment.js?v=20261105-ui-47"></script>
-  <script src="assets/protein-alignment-view.js?v=20261105-ui-47"></script>
-  <script src="assets/alignment-selection.js?v=20261105-ui-47"></script>
-  <script src="assets/alignment-candidates.js?v=20261105-ui-47"></script>
-  <script src="assets/transcript-sequences.js?v=20261105-ui-47"></script>
-  <script src="assets/gene-description.js?v=20261105-ui-47"></script>
-  <script src="assets/functional-annotation.js?v=20261105-ui-47"></script>
-  <script src="assets/app.js?v=20261105-ui-47"></script>
+  <script src="config.js?v=20261105-ui-48"></script>
+  <script src="assets/browser-alignment.js?v=20261105-ui-48"></script>
+  <script src="assets/codon-alignment.js?v=20261105-ui-48"></script>
+  <script src="assets/protein-alignment-view.js?v=20261105-ui-48"></script>
+  <script src="assets/alignment-selection.js?v=20261105-ui-48"></script>
+  <script src="assets/alignment-candidates.js?v=20261105-ui-48"></script>
+  <script src="assets/transcript-sequences.js?v=20261105-ui-48"></script>
+  <script src="assets/gene-description.js?v=20261105-ui-48"></script>
+  <script src="assets/functional-annotation.js?v=20261105-ui-48"></script>
+  <script src="assets/app.js?v=20261105-ui-48"></script>
 </body>
 </html>
