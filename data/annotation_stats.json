@@ -1,0 +1,694 @@
+{
+ "run": "18_genome_V2",
+ "created_utc": "2026-11-04T01:30:53Z",
+ "checks_passed": "16/16",
+ "busco": {
+  "version": "6.1.0",
+  "lineage": "brassicales_odb12.2",
+  "lineage_date": "2026-05-13",
+  "markers": 7083,
+  "mode": "proteins"
+ },
+ "totals": {
+  "annotations": 18,
+  "accessions": 14,
+  "genes": 1473060,
+  "on_chr01_chr20": 1454091,
+  "analysed": 1454016,
+  "off_chr01_chr20": 16245,
+  "no_usable_protein": 2799,
+  "unassigned": 32794,
+  "orthogroups": 82506,
+  "to_verify": 4757,
+  "to_verify_own_evidence": 3342,
+  "to_verify_stretch_context": 1415
+ },
+ "annotations": [
+  {
+   "genome": "DH55V3",
+   "accession": "DH55",
+   "annotation": "DH55 V3",
+   "assembly_version": "V3",
+   "annotation_version": "V3",
+   "genes": 102393,
+   "on_chr01_chr20": 99873,
+   "analysed": 99873,
+   "off_chr01_chr20": 2520,
+   "no_usable_protein": 0,
+   "unassigned": 3049,
+   "to_verify": 30,
+   "to_verify_own_evidence": 24,
+   "to_verify_stretch_context": 6,
+   "busco": {
+    "C": 99.6,
+    "S": 1.3,
+    "D": 98.3,
+    "F": 0.0,
+    "M": 0.4,
+    "n": 7083,
+    "counts": {
+     "complete": 7052,
+     "single": 89,
+     "duplicated": 6963,
+     "fragmented": 1,
+     "missing": 30
+    },
+    "complete_copies": {
+     "1": 89,
+     "2": 591,
+     "3": 6203,
+     "4+": 169
+    }
+   }
+  },
+  {
+   "genome": "DH55V2",
+   "accession": "DH55",
+   "annotation": "DH55 V2 corrected",
+   "assembly_version": "V2",
+   "annotation_version": "V2_corrected",
+   "genes": 89418,
+   "on_chr01_chr20": 85226,
+   "analysed": 85151,
+   "off_chr01_chr20": 4140,
+   "no_usable_protein": 127,
+   "unassigned": 5033,
+   "to_verify": 578,
+   "to_verify_own_evidence": 371,
+   "to_verify_stretch_context": 207,
+   "busco": {
+    "C": 99.4,
+    "S": 12.3,
+    "D": 87.1,
+    "F": 0.1,
+    "M": 0.6,
+    "n": 7083,
+    "counts": {
+     "complete": 7038,
+     "single": 870,
+     "duplicated": 6168,
+     "fragmented": 6,
+     "missing": 39
+    },
+    "complete_copies": {
+     "1": 870,
+     "2": 1698,
+     "3": 4289,
+     "4+": 181
+    }
+   }
+  },
+  {
+   "genome": "Suneson",
+   "accession": "Suneson",
+   "annotation": "MSU_CS-sun 2025-07-01",
+   "assembly_version": "MSU_CS-sun_unmasked",
+   "annotation_version": "MSU_CS-sun_2025-07-01",
+   "genes": 140827,
+   "on_chr01_chr20": 138155,
+   "analysed": 138155,
+   "off_chr01_chr20": 0,
+   "no_usable_protein": 2672,
+   "unassigned": 12507,
+   "to_verify": 269,
+   "to_verify_own_evidence": 194,
+   "to_verify_stretch_context": 75,
+   "busco": {
+    "C": 96.2,
+    "S": 17.9,
+    "D": 78.3,
+    "F": 0.7,
+    "M": 3.1,
+    "n": 7083,
+    "counts": {
+     "complete": 6814,
+     "single": 1266,
+     "duplicated": 5548,
+     "fragmented": 48,
+     "missing": 221
+    },
+    "complete_copies": {
+     "1": 1266,
+     "2": 1721,
+     "3": 3406,
+     "4+": 421
+    }
+   }
+  },
+  {
+   "genome": "Prytzh",
+   "accession": "Prytzh",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 69377,
+   "on_chr01_chr20": 69377,
+   "analysed": 69377,
+   "off_chr01_chr20": 0,
+   "no_usable_protein": 0,
+   "unassigned": 199,
+   "to_verify": 55,
+   "to_verify_own_evidence": 39,
+   "to_verify_stretch_context": 16,
+   "busco": {
+    "C": 99.4,
+    "S": 0.8,
+    "D": 98.6,
+    "F": 0.0,
+    "M": 0.6,
+    "n": 7083,
+    "counts": {
+     "complete": 7037,
+     "single": 55,
+     "duplicated": 6982,
+     "fragmented": 2,
+     "missing": 44
+    },
+    "complete_copies": {
+     "1": 55,
+     "2": 547,
+     "3": 6261,
+     "4+": 174
+    }
+   }
+  },
+  {
+   "genome": "Acsn226",
+   "accession": "Acsn226",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 70366,
+   "on_chr01_chr20": 70360,
+   "analysed": 70360,
+   "off_chr01_chr20": 6,
+   "no_usable_protein": 0,
+   "unassigned": 323,
+   "to_verify": 41,
+   "to_verify_own_evidence": 38,
+   "to_verify_stretch_context": 3,
+   "busco": {
+    "C": 99.3,
+    "S": 0.8,
+    "D": 98.5,
+    "F": 0.0,
+    "M": 0.7,
+    "n": 7083,
+    "counts": {
+     "complete": 7035,
+     "single": 60,
+     "duplicated": 6975,
+     "fragmented": 0,
+     "missing": 48
+    },
+    "complete_copies": {
+     "1": 60,
+     "2": 556,
+     "3": 6256,
+     "4+": 163
+    }
+   }
+  },
+  {
+   "genome": "Ames1043",
+   "accession": "Ames1043",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 70410,
+   "on_chr01_chr20": 70410,
+   "analysed": 70410,
+   "off_chr01_chr20": 0,
+   "no_usable_protein": 0,
+   "unassigned": 106,
+   "to_verify": 22,
+   "to_verify_own_evidence": 18,
+   "to_verify_stretch_context": 4,
+   "busco": {
+    "C": 99.3,
+    "S": 0.7,
+    "D": 98.6,
+    "F": 0.0,
+    "M": 0.6,
+    "n": 7083,
+    "counts": {
+     "complete": 7036,
+     "single": 50,
+     "duplicated": 6986,
+     "fragmented": 1,
+     "missing": 46
+    },
+    "complete_copies": {
+     "1": 50,
+     "2": 566,
+     "3": 6261,
+     "4+": 159
+    }
+   }
+  },
+  {
+   "genome": "Borowska",
+   "accession": "Borowska",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 69914,
+   "on_chr01_chr20": 69903,
+   "analysed": 69903,
+   "off_chr01_chr20": 11,
+   "no_usable_protein": 0,
+   "unassigned": 92,
+   "to_verify": 70,
+   "to_verify_own_evidence": 61,
+   "to_verify_stretch_context": 9,
+   "busco": {
+    "C": 99.4,
+    "S": 0.8,
+    "D": 98.6,
+    "F": 0.0,
+    "M": 0.6,
+    "n": 7083,
+    "counts": {
+     "complete": 7038,
+     "single": 54,
+     "duplicated": 6984,
+     "fragmented": 0,
+     "missing": 45
+    },
+    "complete_copies": {
+     "1": 54,
+     "2": 544,
+     "3": 6270,
+     "4+": 170
+    }
+   }
+  },
+  {
+   "genome": "CAM116",
+   "accession": "CAM116",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 74852,
+   "on_chr01_chr20": 74852,
+   "analysed": 74852,
+   "off_chr01_chr20": 0,
+   "no_usable_protein": 0,
+   "unassigned": 231,
+   "to_verify": 54,
+   "to_verify_own_evidence": 41,
+   "to_verify_stretch_context": 13,
+   "busco": {
+    "C": 99.4,
+    "S": 0.6,
+    "D": 98.8,
+    "F": 0.0,
+    "M": 0.6,
+    "n": 7083,
+    "counts": {
+     "complete": 7044,
+     "single": 45,
+     "duplicated": 6999,
+     "fragmented": 0,
+     "missing": 39
+    },
+    "complete_copies": {
+     "1": 45,
+     "2": 524,
+     "3": 6302,
+     "4+": 173
+    }
+   }
+  },
+  {
+   "genome": "CAM70",
+   "accession": "CAM70",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 74521,
+   "on_chr01_chr20": 74513,
+   "analysed": 74513,
+   "off_chr01_chr20": 8,
+   "no_usable_protein": 0,
+   "unassigned": 205,
+   "to_verify": 35,
+   "to_verify_own_evidence": 24,
+   "to_verify_stretch_context": 11,
+   "busco": {
+    "C": 99.4,
+    "S": 0.6,
+    "D": 98.8,
+    "F": 0.0,
+    "M": 0.6,
+    "n": 7083,
+    "counts": {
+     "complete": 7042,
+     "single": 45,
+     "duplicated": 6997,
+     "fragmented": 0,
+     "missing": 41
+    },
+    "complete_copies": {
+     "1": 45,
+     "2": 531,
+     "3": 6303,
+     "4+": 163
+    }
+   }
+  },
+  {
+   "genome": "CN113611",
+   "accession": "CN113611",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 70933,
+   "on_chr01_chr20": 70922,
+   "analysed": 70922,
+   "off_chr01_chr20": 11,
+   "no_usable_protein": 0,
+   "unassigned": 242,
+   "to_verify": 133,
+   "to_verify_own_evidence": 95,
+   "to_verify_stretch_context": 38,
+   "busco": {
+    "C": 99.4,
+    "S": 0.7,
+    "D": 98.6,
+    "F": 0.0,
+    "M": 0.6,
+    "n": 7083,
+    "counts": {
+     "complete": 7037,
+     "single": 52,
+     "duplicated": 6985,
+     "fragmented": 0,
+     "missing": 46
+    },
+    "complete_copies": {
+     "1": 52,
+     "2": 620,
+     "3": 6203,
+     "4+": 162
+    }
+   }
+  },
+  {
+   "genome": "Giessen4",
+   "accession": "Giessen4",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 69464,
+   "on_chr01_chr20": 69453,
+   "analysed": 69453,
+   "off_chr01_chr20": 11,
+   "no_usable_protein": 0,
+   "unassigned": 158,
+   "to_verify": 85,
+   "to_verify_own_evidence": 64,
+   "to_verify_stretch_context": 21,
+   "busco": {
+    "C": 99.2,
+    "S": 0.8,
+    "D": 98.4,
+    "F": 0.0,
+    "M": 0.8,
+    "n": 7083,
+    "counts": {
+     "complete": 7029,
+     "single": 60,
+     "duplicated": 6969,
+     "fragmented": 0,
+     "missing": 54
+    },
+    "complete_copies": {
+     "1": 60,
+     "2": 526,
+     "3": 6271,
+     "4+": 172
+    }
+   }
+  },
+  {
+   "genome": "Joelle",
+   "accession": "Joelle",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 71027,
+   "on_chr01_chr20": 71012,
+   "analysed": 71012,
+   "off_chr01_chr20": 15,
+   "no_usable_protein": 0,
+   "unassigned": 338,
+   "to_verify": 19,
+   "to_verify_own_evidence": 16,
+   "to_verify_stretch_context": 3,
+   "busco": {
+    "C": 99.4,
+    "S": 0.8,
+    "D": 98.6,
+    "F": 0.0,
+    "M": 0.6,
+    "n": 7083,
+    "counts": {
+     "complete": 7041,
+     "single": 55,
+     "duplicated": 6986,
+     "fragmented": 1,
+     "missing": 41
+    },
+    "complete_copies": {
+     "1": 55,
+     "2": 557,
+     "3": 6276,
+     "4+": 153
+    }
+   }
+  },
+  {
+   "genome": "Licalla",
+   "accession": "Licalla",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 71054,
+   "on_chr01_chr20": 71037,
+   "analysed": 71037,
+   "off_chr01_chr20": 17,
+   "no_usable_protein": 0,
+   "unassigned": 413,
+   "to_verify": 48,
+   "to_verify_own_evidence": 41,
+   "to_verify_stretch_context": 7,
+   "busco": {
+    "C": 99.3,
+    "S": 0.9,
+    "D": 98.4,
+    "F": 0.0,
+    "M": 0.7,
+    "n": 7083,
+    "counts": {
+     "complete": 7035,
+     "single": 64,
+     "duplicated": 6971,
+     "fragmented": 1,
+     "missing": 47
+    },
+    "complete_copies": {
+     "1": 64,
+     "2": 644,
+     "3": 6151,
+     "4+": 176
+    }
+   }
+  },
+  {
+   "genome": "Lindo",
+   "accession": "Lindo",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 69153,
+   "on_chr01_chr20": 69141,
+   "analysed": 69141,
+   "off_chr01_chr20": 12,
+   "no_usable_protein": 0,
+   "unassigned": 180,
+   "to_verify": 30,
+   "to_verify_own_evidence": 27,
+   "to_verify_stretch_context": 3,
+   "busco": {
+    "C": 99.3,
+    "S": 0.8,
+    "D": 98.5,
+    "F": 0.0,
+    "M": 0.7,
+    "n": 7083,
+    "counts": {
+     "complete": 7034,
+     "single": 58,
+     "duplicated": 6976,
+     "fragmented": 0,
+     "missing": 49
+    },
+    "complete_copies": {
+     "1": 58,
+     "2": 559,
+     "3": 6255,
+     "4+": 162
+    }
+   }
+  },
+  {
+   "genome": "Svalof",
+   "accession": "Svalof",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 70199,
+   "on_chr01_chr20": 70182,
+   "analysed": 70182,
+   "off_chr01_chr20": 17,
+   "no_usable_protein": 0,
+   "unassigned": 345,
+   "to_verify": 33,
+   "to_verify_own_evidence": 26,
+   "to_verify_stretch_context": 7,
+   "busco": {
+    "C": 99.3,
+    "S": 0.8,
+    "D": 98.5,
+    "F": 0.0,
+    "M": 0.7,
+    "n": 7083,
+    "counts": {
+     "complete": 7031,
+     "single": 57,
+     "duplicated": 6974,
+     "fragmented": 1,
+     "missing": 51
+    },
+    "complete_copies": {
+     "1": 57,
+     "2": 612,
+     "3": 6197,
+     "4+": 165
+    }
+   }
+  },
+  {
+   "genome": "SunesonJGI",
+   "accession": "Suneson",
+   "annotation": "JGI v1.1",
+   "assembly_version": "v1.0",
+   "annotation_version": "v1.1",
+   "genes": 97359,
+   "on_chr01_chr20": 87940,
+   "analysed": 87940,
+   "off_chr01_chr20": 9419,
+   "no_usable_protein": 0,
+   "unassigned": 1031,
+   "to_verify": 545,
+   "to_verify_own_evidence": 447,
+   "to_verify_stretch_context": 98,
+   "busco": {
+    "C": 99.7,
+    "S": 0.9,
+    "D": 98.8,
+    "F": 0.0,
+    "M": 0.3,
+    "n": 7083,
+    "counts": {
+     "complete": 7063,
+     "single": 63,
+     "duplicated": 7000,
+     "fragmented": 1,
+     "missing": 19
+    },
+    "complete_copies": {
+     "1": 63,
+     "2": 541,
+     "3": 5450,
+     "4+": 1009
+    }
+   }
+  },
+  {
+   "genome": "SunesonFang2023",
+   "accession": "Suneson",
+   "annotation": "Fang 2023 SUN_v2 HC",
+   "assembly_version": "SUN_v2",
+   "annotation_version": "SUN_v2.hc_gene_models",
+   "genes": 91877,
+   "on_chr01_chr20": 91819,
+   "analysed": 91819,
+   "off_chr01_chr20": 58,
+   "no_usable_protein": 0,
+   "unassigned": 3972,
+   "to_verify": 2223,
+   "to_verify_own_evidence": 1535,
+   "to_verify_stretch_context": 688,
+   "busco": {
+    "C": 98.0,
+    "S": 6.7,
+    "D": 91.3,
+    "F": 0.2,
+    "M": 1.9,
+    "n": 7083,
+    "counts": {
+     "complete": 6938,
+     "single": 472,
+     "duplicated": 6466,
+     "fragmented": 13,
+     "missing": 132
+    },
+    "complete_copies": {
+     "1": 472,
+     "2": 1350,
+     "3": 5013,
+     "4+": 103
+    }
+   }
+  },
+  {
+   "genome": "SunesonBrock2024",
+   "accession": "Suneson",
+   "annotation": "Brock 2024 Sun_genes_v4",
+   "assembly_version": "CsSunv4.1",
+   "annotation_version": "Sun_genes_v4",
+   "genes": 99916,
+   "on_chr01_chr20": 99916,
+   "analysed": 99916,
+   "off_chr01_chr20": 0,
+   "no_usable_protein": 0,
+   "unassigned": 4370,
+   "to_verify": 487,
+   "to_verify_own_evidence": 281,
+   "to_verify_stretch_context": 206,
+   "busco": {
+    "C": 98.8,
+    "S": 5.7,
+    "D": 93.1,
+    "F": 0.0,
+    "M": 1.2,
+    "n": 7083,
+    "counts": {
+     "complete": 6998,
+     "single": 401,
+     "duplicated": 6597,
+     "fragmented": 1,
+     "missing": 84
+    },
+    "complete_copies": {
+     "1": 401,
+     "2": 1183,
+     "3": 5264,
+     "4+": 150
+    }
+   }
+  }
+ ]
+}
