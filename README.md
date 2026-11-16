@@ -16,7 +16,6 @@ Website release: **v1.0.0** (2026-11-07).
 - Drag annotation rows to set the order of protein/CDS results and downloads.
 - Download query TSVs, sequences, annotation tables and enrichment inputs.
 
-The interface opens in English by default. Use the language menu for Chinese (`?lang=zh`).
 
 ## Data release
 
