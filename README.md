@@ -2,7 +2,7 @@
 
 Gene correspondence, homeologs and functional annotation across **18 annotations of 14 Camelina sativa accessions**.
 
-Website release: **v1.0.0** (2026-11-07).
+Website release: **v1.0.1** (2026-11-16).
 
 [Website](https://yang-dayu.github.io/camelina-pan-gene/) — check its footer for the deployed data revision.
 
@@ -12,7 +12,7 @@ Website release: **v1.0.0** (2026-11-07).
 - Explore candidate counterparts and predicted SG1/SG2/SG3 homeologs, including position-review flags.
 - Inspect ranked protein hits, coverage, synteny blocks, OrthoFinder relations and pan-gene memberships.
 - Read each transcript's functional results from TAIR10, Swiss-Prot, RefSeq, eggNOG-mapper, KofamScan and InterProScan.
-- Select available protein/CDS sequences and transcripts; align proteins in the browser with Kalign and view the projected CDS alignment.
+- Select available protein/CDS sequences and transcripts; align proteins in the browser with Kalign and view the projected CDS alignment with all rows shown in the page and compact row labels.
 - Drag annotation rows to set the order of protein/CDS results and downloads.
 - Download query TSVs, sequences, annotation tables and enrichment inputs.
 

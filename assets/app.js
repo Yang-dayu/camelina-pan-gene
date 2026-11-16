@@ -2980,6 +2980,8 @@ const ZH_PATTERNS = [
   [/^(.+) moved to position (\d+) of (\d+)\.$/, "$1 已移至第 $2 位，共 $3 行。"],
   [/^Gene for (.+)$/, "$1 的基因"],
   [/^(\S+) \(\+(\d+) IDs\)$/, "$1（另 $2 个 ID）"],
+  [/^\+(\d+) IDs$/, "另 $1 个 ID"],
+  [/^([\d,]+) nt incl\. stop$/, "$1 nt（含终止密码子）"],
   [/^Transcript for (.+)$/, "$1 的转录本"],
   [/^No homeolog group was assigned \((.+)\)\.$/, (all, note) => `没有指派部分同源组（${zhPart(note)}）。`],
   [/^(\d+) proteins aligned in your browser with Kalign (\S+)\.$/, "$1 条蛋白已在浏览器中用 Kalign $2 比对。"],

@@ -204,11 +204,18 @@ window.ProteinAlignmentView = (() => {
           "aria-hidden": "true",
         }, displayResidue));
       }
+      // Two lines keep the rows close together: annotation and gene, then transcript and length.
+      // A merged record holds several comma-separated gene IDs: show the first, keep all in the tooltip.
+      const geneIds = String(row.gene_id ?? "").split(",");
       const label = element("th", { class: "msa-label", scope: "row" },
-        element("strong", {}, name(row.genome)), element("code", {}, row.gene_id),
-        row.transcript_key ? element("small", { title: row.transcript_key }, row.transcript_id) : null,
-        element("small", {}, `${row.length.toLocaleString("en-US")} ${isCds ? "nt" : "aa"}`
-          + (isCds && row.terminal_stop ? " incl. stop" : "")));
+        element("span", { class: "msa-label-line" },
+          element("strong", {}, name(row.genome)), " ",
+          element("code", { title: row.gene_id }, geneIds[0]),
+          geneIds.length > 1 ? [" ", element("small", { title: row.gene_id }, `+${geneIds.length - 1} IDs`)] : null),
+        element("span", { class: "msa-label-line" },
+          row.transcript_key ? [element("small", { title: row.transcript_key }, row.transcript_id), " "] : null,
+          element("small", {}, `${row.length.toLocaleString("en-US")} ${isCds ? "nt" : "aa"}`
+            + (isCds && row.terminal_stop ? " incl. stop" : ""))));
       tbody.append(element("tr", { "data-genome": row.genome }, label, element("td", {}, track)));
     }
     const bars = element("div", { class: "msa-track msa-conservation" });
@@ -226,8 +233,9 @@ window.ProteinAlignmentView = (() => {
       if (!viewport.isConnected) return;
       const labelWidth = table.querySelector(".msa-label").getBoundingClientRect().width;
       const first = Math.floor(Math.max(0, viewport.scrollLeft - 10) / 11) + 1;
-      const visible = Math.max(1, Math.floor((viewport.clientWidth - labelWidth - 20) / 11));
-      rangeLabel.textContent = `Columns ${first}–${Math.min(summary.length, first + visible - 1)} of ${summary.length}`;
+      // The last fully visible column is counted from the right edge, so End reports the final column.
+      const last = Math.floor((viewport.scrollLeft + viewport.clientWidth - labelWidth - 10) / 11);
+      rangeLabel.textContent = `Columns ${first}–${Math.min(summary.length, Math.max(first, last))} of ${summary.length}`;
     };
     viewport.addEventListener("scroll", updateRange, { passive: true });
     const jump = (column) => { viewport.scrollLeft = column ? column * 11 + 10 : 0; updateRange(); };

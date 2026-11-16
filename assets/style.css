@@ -704,7 +704,7 @@ td.evidence { white-space: nowrap; }
 .review-candidates td.evidence { min-width: 160px; }
 .review-candidates code { overflow-wrap: anywhere; }
 
-/* Protein alignment example: keep long sequences inside their own scroll area. */
+/* Protein alignment: long sequences scroll sideways in their own area; all rows stay in the page. */
 .protein-alignment-action { margin-top: 8px; }
 .protein-alignment-action button { font-size: 12px; }
 .alignment-run-controls {
@@ -756,17 +756,21 @@ td.evidence { white-space: nowrap; }
 }
 .msa-view-controls { justify-content: space-between; font-size: 13px; }
 .msa-view-controls label { cursor: pointer; }
-.msa-scroll { max-width: 100%; max-height: 62vh; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+/* Every aligned row is shown in the page; only the columns scroll sideways inside the frame. */
+.msa-scroll { max-width: 100%; overflow-x: auto; overflow-y: hidden; border: 1px solid var(--line); border-radius: 8px; }
 .msa-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .msa-table { width: max-content; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 .msa-table th, .msa-table td { padding: 3px 0; vertical-align: middle; }
 .msa-table thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); }
+/* Two short lines per row keep the sequences close together. The label column fits its longest line
+   (at least 200 px); text beyond 340 px ends in "…", and the full gene ID is in its tooltip. */
 .msa-table .msa-label {
-  position: sticky; left: 0; z-index: 1; width: 238px; min-width: 238px; max-width: 238px;
-  padding: 6px 12px; background: var(--surface); border-right: 1px solid var(--line); color: var(--text);
+  position: sticky; left: 0; z-index: 1; width: 200px; padding: 4px 12px; line-height: 16px;
+  background: var(--surface); border-right: 1px solid var(--line); color: var(--text);
 }
 .msa-table thead .msa-label { z-index: 3; background: var(--surface-2); }
-.msa-label strong, .msa-label code, .msa-label small { display: block; }
+.msa-label-line { display: block; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msa-label-line > * + * { margin-left: 4px; }
 .msa-label code { font-size: 11px; font-weight: 400; }
 .msa-label small { color: var(--muted); font-size: 11px; font-weight: 400; }
 .msa-track { display: flex; width: max-content; padding: 0 10px; font: 13px/24px var(--mono); }
@@ -823,8 +827,14 @@ td.evidence { white-space: nowrap; }
 .msa-colour-key span { padding: 2px 8px; border-radius: 4px; }
 @media (max-width: 640px) {
   .details-dialog.alignment-dialog { width: calc(100vw - 16px); max-height: 92vh; padding: 14px; }
-  .msa-table .msa-label { width: 155px; min-width: 155px; max-width: 155px; padding: 6px 8px; }
-  .msa-label code { white-space: normal; overflow-wrap: anywhere; }
+  .msa-table .msa-label { width: 155px; min-width: 155px; max-width: 155px; padding: 4px 8px; }
+  /* Phones stack each part on its own line and wrap long IDs instead of cutting them (no tooltips on touch). */
+  .msa-label-line { max-width: none; white-space: normal; }
+  .msa-label-line > * { display: block; overflow-wrap: anywhere; }
+  .msa-label-line > * + * { margin-left: 0; }
+  /* A merged record's "+N IDs" stays on the gene ID's line. */
+  .msa-label-line > code, .msa-label-line > code + small { display: inline; }
+  .msa-label-line > code + small { margin-left: 4px; }
   .msa-downloads button { flex: 1 1 120px; padding: 6px 8px; font-size: 12px; }
 }
 
